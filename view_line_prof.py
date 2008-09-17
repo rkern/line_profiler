@@ -21,8 +21,7 @@ def show_func(filename, start_lineno, func_name, timings, unit):
     print 'Function: %s at line %s' % (func_name, start_lineno)
     all_lines = linecache.getlines(filename)
     sublines = inspect.getblock(all_lines[start_lineno-1:])
-    header_template = '%6s %9s %12s %8s   %-s'
-    entry_template = '%6s %9s %12s %8s   %-s'
+    template = '%6s %9s %12s %8s  %-s'
     d = {}
     total_time = 0.0
     for lineno, nhits, time in timings:
@@ -32,13 +31,13 @@ def show_func(filename, start_lineno, func_name, timings, unit):
         d[lineno] = (nhits, time, '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '')
-    header = header_template % ('Line #', 'Hits', 'Time', '% Time', 'Line Contents')
+    header = template % ('Line #', 'Hits', 'Time', '% Time', 'Line Contents')
     print
     print header
     print '=' * len(header)
     for lineno, line in zip(linenos, sublines):
         nhits, time, percent = d.get(lineno, empty)
-        print entry_template % (lineno, nhits, time, percent, line.rstrip('\n').rstrip('\r'))
+        print template % (lineno, nhits, time, percent, line.rstrip('\n').rstrip('\r'))
     print
 
 def show_text(args, stats, unit):
