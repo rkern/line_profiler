@@ -99,7 +99,13 @@ def main(args):
     options, args = parser.parse_args()
 
     if not options.outfile:
-        options.outfile = '%s.prof' % os.path.basename(args[0])
+        if options.line_by_line:
+            extension = 'lprof'
+        else:
+            extension = 'prof'
+        options.outfile = '%s.%s' % (os.path.basename(args[0]), extension)
+
+    ns = locals()
 
     sys.argv[:] = args
     if options.setup is not None:
@@ -109,15 +115,15 @@ def main(args):
         __file__ = setup_file
         __name__ = '__main__'
         # Make sure the script's directory is on sys.path instead of just
-        # lsprof.py's.
+        # kernprof.py's.
         sys.path.insert(0, os.path.dirname(setup_file))
-        execfile(setup_file)
+        execfile(setup_file, ns, ns)
 
     script_file = find_script(sys.argv[0])
     __file__ = script_file
     __name__ = '__main__'
     # Make sure the script's directory is on sys.path instead of just
-    # lsprof.py's.
+    # kernprof.py's.
     sys.path.insert(0, os.path.dirname(script_file))
 
     if options.line_by_line:
@@ -133,9 +139,9 @@ def main(args):
     try:
         try:
             if options.builtin:
-                execfile(script_file)
+                execfile(script_file, ns, ns)
             else:
-                prof.run('execfile(%r)' % (script_file,))
+                prof.runctx('execfile(%r)' % (script_file,), ns, ns)
         except (KeyboardInterrupt, SystemExit):
             pass
     finally:
