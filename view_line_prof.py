@@ -9,15 +9,16 @@ import marshal
 import os
 
 
-def show_func(filename, start_lineno, func_name, timings):
+def show_func(filename, start_lineno, func_name, timings, unit):
     """ Show results for a single function.
     """
     if not os.path.exists(filename):
         print 'Could not find file %s' % filename
+        print 'Are you sure you are running this program from the same directory'
+        print 'that you ran the profiler from?'
         return
     print 'File: %s' % filename
     print 'Function: %s at line %s' % (func_name, start_lineno)
-    print
     all_lines = linecache.getlines(filename)
     sublines = inspect.getblock(all_lines[start_lineno-1:])
     header_template = '%6s %9s %12s %8s   %-s'
@@ -26,11 +27,13 @@ def show_func(filename, start_lineno, func_name, timings):
     total_time = 0.0
     for lineno, nhits, time in timings:
         total_time += time
+    print 'Total time: %g s' % (total_time * unit)
     for lineno, nhits, time in timings:
         d[lineno] = (nhits, time, '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '')
     header = header_template % ('Line #', 'Hits', 'Time', '% Time', 'Line Contents')
+    print
     print header
     print '=' * len(header)
     for lineno, line in zip(linenos, sublines):
@@ -44,7 +47,7 @@ def show_text(args, stats, unit):
     print 'Timer unit: %g s' % unit
     print
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name])
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit)
 
 
 def main():

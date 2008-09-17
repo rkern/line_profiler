@@ -147,6 +147,7 @@ def Proc1(PtrParIn):
     NextRecord.PtrComp = None
     return PtrParIn
 
+@profile
 def Proc2(IntParIO):
     IntLoc = IntParIO + 10
     while 1:
