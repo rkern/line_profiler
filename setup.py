@@ -7,7 +7,6 @@ setup(
     ext_modules=[ 
         Extension('_line_profiler',
                   sources=['_line_profiler.pyx', 'timers.c'],
-                  extra_compile_args=['-fno-inline'],
         ),
     ],
     py_modules=['line_profiler'],

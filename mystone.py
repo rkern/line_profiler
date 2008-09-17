@@ -8,5 +8,4 @@ import pystone
 print os.getpid()
 #lineprof.enable()
 
-while True:
-    pystone.pystones()
+pystone.pystones()
