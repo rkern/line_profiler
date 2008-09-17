@@ -4,12 +4,14 @@ from Cython.Distutils import build_ext
 
 setup(
     name = 'line_profiler',
-    ext_modules=[ 
+    version = "0.1",
+    ext_modules = [ 
         Extension('_line_profiler',
                   sources=['_line_profiler.pyx', 'timers.c'],
         ),
     ],
-    py_modules=['line_profiler'],
+    license = "BSD",
+    py_modules = ['line_profiler'],
     cmdclass = {'build_ext': build_ext},
 )
 
