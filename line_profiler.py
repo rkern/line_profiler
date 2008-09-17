@@ -37,3 +37,29 @@ class LineProfiler(CLineProfiler):
         finally:
             f.close()
 
+    def run(self, cmd):
+        """ Profile a single executable statment in the main namespace.
+        """
+        import __main__
+        dict = __main__.__dict__
+        return self.runctx(cmd, dict, dict)
+
+    def runctx(self, cmd, globals, locals):
+        """ Profile a single executable statement in the given namespaces.
+        """
+        self.enable_by_count()
+        try:
+            exec cmd in globals, locals
+        finally:
+            self.disable_by_count()
+        return self
+
+    def runcall(self, func, *args, **kw):
+        """ Profile a single function call.
+        """
+        self.enable_by_count()
+        try:
+            return func(*args, **kw)
+        finally:
+            self.disable_by_count()
+
