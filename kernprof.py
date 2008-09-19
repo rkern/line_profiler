@@ -105,7 +105,6 @@ def main(args):
             extension = 'prof'
         options.outfile = '%s.%s' % (os.path.basename(args[0]), extension)
 
-    ns = locals()
 
     sys.argv[:] = args
     if options.setup is not None:
@@ -117,14 +116,8 @@ def main(args):
         # Make sure the script's directory is on sys.path instead of just
         # kernprof.py's.
         sys.path.insert(0, os.path.dirname(setup_file))
+        ns = locals()
         execfile(setup_file, ns, ns)
-
-    script_file = find_script(sys.argv[0])
-    __file__ = script_file
-    __name__ = '__main__'
-    # Make sure the script's directory is on sys.path instead of just
-    # kernprof.py's.
-    sys.path.insert(0, os.path.dirname(script_file))
 
     if options.line_by_line:
         import line_profiler
@@ -136,8 +129,16 @@ def main(args):
         import __builtin__
         __builtin__.__dict__['profile'] = prof
 
+    script_file = find_script(sys.argv[0])
+    __file__ = script_file
+    __name__ = '__main__'
+    # Make sure the script's directory is on sys.path instead of just
+    # kernprof.py's.
+    sys.path.insert(0, os.path.dirname(script_file))
+
     try:
         try:
+            ns = locals()
             if options.builtin:
                 execfile(script_file, ns, ns)
             else:
