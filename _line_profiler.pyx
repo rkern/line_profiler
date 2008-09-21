@@ -98,7 +98,14 @@ cdef class LineProfiler:
             self.add_function(func)
 
     def add_function(self, func):
-        code = func.func_code
+        """ Record line profiling information for the given Python function.
+        """
+        try:
+            code = func.func_code
+        except AttributeError:
+            import warnings
+            warnings.warn("Could not extract a code object for the object %r" % (func,))
+            return
         if code not in self.code_map:
             self.code_map[code] = {}
             self.functions.append(func)
