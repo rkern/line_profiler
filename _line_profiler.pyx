@@ -1,6 +1,5 @@
 from python25 cimport PyFrameObject, PyObject, PyStringObject
 
-from cProfile import label
 
 cdef extern from "frameobject.h":
     ctypedef int (*Py_tracefunc)(object self, PyFrameObject *py_frame, int what, object arg)
@@ -37,6 +36,18 @@ cdef extern from "Python.h":
 cdef extern from "timers.h":
     PY_LONG_LONG hpTimer()
     double hpTimerUnit()
+
+
+def label(code):
+    """ Return a (filename, first_lineno, func_name) tuple for a given code
+    object.
+
+    This is the same labelling as used by the cProfile module in Python 2.5.
+    """
+    if isinstance(code, str):
+        return ('~', 0, code)    # built-in functions ('~' sorts at the end)
+    else:
+        return (code.co_filename, code.co_firstlineno, code.co_name)
 
 
 cdef class LineTiming:
