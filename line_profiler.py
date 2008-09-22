@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+from cStringIO import StringIO
 import inspect
 import linecache
 import marshal
+import optparse
 import os
+import sys
 
 from _line_profiler import LineProfiler as CLineProfiler
 
@@ -41,11 +44,11 @@ class LineProfiler(CLineProfiler):
         finally:
             f.close()
 
-    def print_stats(self):
+    def print_stats(self, stream=None):
         """ Show the gathered statistics.
         """
         stats, unit = self.get_stats()
-        show_text(stats, unit)
+        show_text(stats, unit, stream=stream)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -74,16 +77,18 @@ class LineProfiler(CLineProfiler):
             self.disable_by_count()
 
 
-def show_func(filename, start_lineno, func_name, timings, unit):
+def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     """ Show results for a single function.
     """
+    if stream is None:
+        stream = sys.stdout
     if not os.path.exists(filename):
-        print 'Could not find file %s' % filename
-        print 'Are you sure you are running this program from the same directory'
-        print 'that you ran the profiler from?'
+        print >>stream, 'Could not find file %s' % filename
+        print >>stream, 'Are you sure you are running this program from the same directory'
+        print >>stream, 'that you ran the profiler from?'
         return
-    print 'File: %s' % filename
-    print 'Function: %s at line %s' % (func_name, start_lineno)
+    print >>stream, 'File: %s' % filename
+    print >>stream, 'Function: %s at line %s' % (func_name, start_lineno)
     all_lines = linecache.getlines(filename)
     sublines = inspect.getblock(all_lines[start_lineno-1:])
     template = '%6s %9s %12s %8s  %-s'
@@ -91,34 +96,115 @@ def show_func(filename, start_lineno, func_name, timings, unit):
     total_time = 0.0
     for lineno, nhits, time in timings:
         total_time += time
-    print 'Total time: %g s' % (total_time * unit)
+    print >>stream, 'Total time: %g s' % (total_time * unit)
     for lineno, nhits, time in timings:
         d[lineno] = (nhits, time, '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '')
     header = template % ('Line #', 'Hits', 'Time', '% Time', 'Line Contents')
-    print
-    print header
-    print '=' * len(header)
+    print >>stream, ''
+    print >>stream, header
+    print >>stream, '=' * len(header)
     for lineno, line in zip(linenos, sublines):
         nhits, time, percent = d.get(lineno, empty)
-        print template % (lineno, nhits, time, percent, line.rstrip('\n').rstrip('\r'))
-    print
+        print >>stream, template % (lineno, nhits, time, percent, line.rstrip('\n').rstrip('\r'))
+    print >>stream, ''
 
-def show_text(stats, unit):
+def show_text(stats, unit, stream=None):
     """ Show text for the given timings.
     """
-    print 'Timer unit: %g s' % unit
-    print
+    if stream is None:
+        stream = sys.stdout
+    print >>stream, 'Timer unit: %g s' % unit
+    print >>stream, ''
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream)
+
+# A %lprun magic for IPython.
+def magic_lprun(self, parameter_s=''):
+    """ Execute a statement under the line-by-line profiler from the
+    line_profiler module.
+    """
+    # Local import to avoid hard dependency.
+    from IPython.genutils import page
+    from IPython.ipstruct import Struct
+    from IPython.ipapi import UsageError
+
+    # Escape quote markers.
+    opts_def = Struct(D=[''], T=[''], f=[])
+    parameter_s = parameter_s.replace('"',r'\"').replace("'",r"\'")
+    opts, arg_str = self.parse_options(parameter_s, 'rf:D:T:', list_all=True)
+    opts.merge(opts_def)
+
+    global_ns = self.shell.user_global_ns
+    local_ns = self.shell.user_ns
+
+    # Get the requested functions.
+    funcs = []
+    for name in opts.f:
+        try:
+            funcs.append(eval(name, global_ns, local_ns))
+        except Exception, e:
+            raise UsageError('Could not find function %r.\n%s: %s' % (name, 
+                e.__class__.__name, e))
+
+    profile = LineProfiler(*funcs)
+
+    # Add the profiler to the builtins for @profile.
+    import __builtin__
+    if 'profile' in __builtin__.__dict__:
+        had_profile = True
+        old_profile = __builtin__.__dict__['profile']
+    else:
+        had_profile = False
+        old_profile = None
+    __builtin__.__dict__['profile'] = profile
+
+    try:
+        profile.runctx(arg_str, global_ns, local_ns)
+        message = ''
+    except SystemExit:
+        message = """*** SystemExit exception caught in code being profiled."""
+    except KeyboardInterrupt:
+        message = ("*** KeyboardInterrupt exception caught in code being "
+            "profiled.")
+    finally:
+        if had_profile:
+            __builtin__.__dict__['profile'] = old_profile
+
+    # Trap text output.
+    stdout_trap = StringIO()
+    profile.print_stats(stdout_trap)
+    output = stdout_trap.getvalue()
+    output = output.rstrip()
+
+    page(output, screen_lines=self.shell.rc.screen_length)
+    print message,
+
+    dump_file = opts.D[0]
+    if dump_file:
+        profile.dump_stats(dump_file)
+        print '\n*** Profile stats marshalled to file',\
+              `dump_file`+'.',message
+
+    text_file = opts.T[0]
+    if text_file:
+        pfile = open(text_file, 'w')
+        pfile.write(output)
+        pfile.close()
+        print '\n*** Profile printout saved to text file',\
+              `text_file`+'.',message
+
+    return_value = None
+    if opts.has_key('r'):
+        return_value = profile
+
+    return return_value
+
 
 def main():
-    import optparse
-    usage = "usage: %prog [-t] profile.lprof"
+    usage = "usage: %prog profile.lprof"
     parser = optparse.OptionParser(usage)
-    parser.add_option('-t', '--text', action='store_const', const='text',
-        dest='action', default='text', help="Show text output.")
 
     options, args = parser.parse_args()
     if len(args) != 1:
@@ -126,10 +212,7 @@ def main():
     f = open(args[0], 'rb')
     stats, unit = marshal.load(f)
     f.close()
-    if options.action == 'text':
-        show_text(stats, unit)
-    else:
-        parser.error("Only --text is supported at this time.")
+    show_text(stats, unit)
 
 if __name__ == '__main__':
     main()
