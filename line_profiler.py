@@ -91,23 +91,23 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     print >>stream, 'Function: %s at line %s' % (func_name, start_lineno)
     all_lines = linecache.getlines(filename)
     sublines = inspect.getblock(all_lines[start_lineno-1:])
-    template = '%6s %9s %12s %8s  %-s'
+    template = '%6s %9s %12s %8s %8s  %-s'
     d = {}
     total_time = 0.0
     for lineno, nhits, time in timings:
         total_time += time
     print >>stream, 'Total time: %g s' % (total_time * unit)
     for lineno, nhits, time in timings:
-        d[lineno] = (nhits, time, '%5.1f' % (100*time / total_time))
+        d[lineno] = (nhits, time, '%6g' % (float(time) / nhits), '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
-    empty = ('', '', '')
-    header = template % ('Line #', 'Hits', 'Time', '% Time', 'Line Contents')
+    empty = ('', '', '', '')
+    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 'Line Contents')
     print >>stream, ''
     print >>stream, header
     print >>stream, '=' * len(header)
     for lineno, line in zip(linenos, sublines):
-        nhits, time, percent = d.get(lineno, empty)
-        print >>stream, template % (lineno, nhits, time, percent, line.rstrip('\n').rstrip('\r'))
+        nhits, time, per_hit, percent = d.get(lineno, empty)
+        print >>stream, template % (lineno, nhits, time, per_hit, percent, line.rstrip('\n').rstrip('\r'))
     print >>stream, ''
 
 def show_text(stats, unit, stream=None):
@@ -146,7 +146,7 @@ def magic_lprun(self, parameter_s=''):
             funcs.append(eval(name, global_ns, local_ns))
         except Exception, e:
             raise UsageError('Could not find function %r.\n%s: %s' % (name, 
-                e.__class__.__name, e))
+                e.__class__.__name__, e))
 
     profile = LineProfiler(*funcs)
 
