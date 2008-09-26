@@ -124,6 +124,35 @@ def show_text(stats, unit, stream=None):
 def magic_lprun(self, parameter_s=''):
     """ Execute a statement under the line-by-line profiler from the
     line_profiler module.
+
+    Usage:
+      %lprun -f func1 -f func2 <statement>
+
+    The given statement (which doesn't require quote marks) is run via the
+    LineProfiler. Profiling is enabled for the functions specified by the -f
+    options. The statistics will be shown side-by-side with the code through the
+    pager once the statement has completed.
+
+    Options:
+    
+    -f <function>: LineProfiler only profiles functions and methods it is told
+    to profile.  This option tells the profiler about these functions. Multiple
+    -f options may be used. The argument may be any expression that gives
+    a Python function or method object. However, one must be careful to avoid
+    spaces that may confuse the option parser. Additionally, functions defined
+    in the interpreter at the In[] prompt or via %run currently cannot be
+    displayed.  Write these functions out to a separate file and import them.
+
+    One or more -f options are required to get any useful results.
+
+    -D <filename>: dump the raw statistics out to a marshal file on disk. The
+    usual extension for this is ".lprof". These statistics may be viewed later
+    by running line_profiler.py as a script.
+
+    -T <filename>: dump the text-formatted statistics with the code side-by-side
+    out to a text file.
+
+    -r: return the raw statistics objects. Be sure to assign 
     """
     # Local import to avoid hard dependency.
     from IPython.genutils import page
@@ -161,13 +190,14 @@ def magic_lprun(self, parameter_s=''):
     __builtin__.__dict__['profile'] = profile
 
     try:
-        profile.runctx(arg_str, global_ns, local_ns)
-        message = ''
-    except SystemExit:
-        message = """*** SystemExit exception caught in code being profiled."""
-    except KeyboardInterrupt:
-        message = ("*** KeyboardInterrupt exception caught in code being "
-            "profiled.")
+        try:
+            profile.runctx(arg_str, global_ns, local_ns)
+            message = ''
+        except SystemExit:
+            message = """*** SystemExit exception caught in code being profiled."""
+        except KeyboardInterrupt:
+            message = ("*** KeyboardInterrupt exception caught in code being "
+                "profiled.")
     finally:
         if had_profile:
             __builtin__.__dict__['profile'] = old_profile
