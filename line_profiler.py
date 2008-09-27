@@ -152,7 +152,7 @@ def magic_lprun(self, parameter_s=''):
     -T <filename>: dump the text-formatted statistics with the code side-by-side
     out to a text file.
 
-    -r: return the raw statistics objects. Be sure to assign 
+    -r: return the LineProfiler object after it has completed profiling.
     """
     # Local import to avoid hard dependency.
     from IPython.genutils import page
