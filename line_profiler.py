@@ -98,7 +98,8 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
         total_time += time
     print >>stream, 'Total time: %g s' % (total_time * unit)
     for lineno, nhits, time in timings:
-        d[lineno] = (nhits, time, '%6g' % (float(time) / nhits), '%5.1f' % (100*time / total_time))
+        d[lineno] = (nhits, time, '%5.1f' % (float(time) / nhits),
+            '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
     header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 'Line Contents')
