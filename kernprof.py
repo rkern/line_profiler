@@ -12,62 +12,60 @@ import sys
 # Guard the import of cProfile such that 2.4 people without lsprof can still use
 # this script with line_profiler.
 try:
-    import cProfile
-    has_cprofile = True
+    from cProfile import Profile
 except ImportError:
     try:
-        import lsprof as cProfile
-        has_cprofile = True
+        from lsprof import Profile
     except ImportError:
-        has_cprofile = False
+        from profile import Profile
 
-if has_cprofile:
-    class ContextualProfile(cProfile.Profile):
-        """ A subclass of cProfile.Profile that adds a context manager for Python
-        2.5 with: statements and a decorator.
+
+class ContextualProfile(Profile):
+    """ A subclass of Profile that adds a context manager for Python
+    2.5 with: statements and a decorator.
+    """
+
+    def __init__(self, *args, **kwds):
+        super(ContextualProfile, self).__init__(*args, **kwds)
+        self.enable_count = 0
+
+    def enable_by_count(self, subcalls=True, builtins=True):
+        """ Enable the profiler if it hasn't been enabled before.
         """
+        if self.enable_count == 0:
+            self.enable(subcalls=subcalls, builtins=builtins)
+        self.enable_count += 1
 
-        def __init__(self, *args, **kwds):
-            super(ContextualProfile, self).__init__(*args, **kwds)
-            self.enable_count = 0
-
-        def enable_by_count(self, subcalls=True, builtins=True):
-            """ Enable the profiler if it hasn't been enabled before.
-            """
+    def disable_by_count(self):
+        """ Disable the profiler if the number of disable requests matches the
+        number of enable requests.
+        """
+        if self.enable_count > 0:
+            self.enable_count -= 1
             if self.enable_count == 0:
-                self.enable(subcalls=subcalls, builtins=builtins)
-            self.enable_count += 1
+                self.disable()
 
-        def disable_by_count(self):
-            """ Disable the profiler if the number of disable requests matches the
-            number of enable requests.
-            """
-            if self.enable_count > 0:
-                self.enable_count -= 1
-                if self.enable_count == 0:
-                    self.disable()
-
-        def __call__(self, func):
-            """ Decorate a function to start the profiler on function entry and stop
-            it on function exit.
-            """
-            def f(*args, **kwds):
-                self.enable_by_count()
-                try:
-                    result = func(*args, **kwds)
-                finally:
-                    self.disable_by_count()
-                return result
-            f.__name__ = func.__name__
-            f.__doc__ = func.__doc__
-            f.__dict__.update(func.__dict__)
-            return f
-
-        def __enter__(self):
+    def __call__(self, func):
+        """ Decorate a function to start the profiler on function entry and stop
+        it on function exit.
+        """
+        def f(*args, **kwds):
             self.enable_by_count()
+            try:
+                result = func(*args, **kwds)
+            finally:
+                self.disable_by_count()
+            return result
+        f.__name__ = func.__name__
+        f.__doc__ = func.__doc__
+        f.__dict__.update(func.__dict__)
+        return f
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            self.disable_by_count()
+    def __enter__(self):
+        self.enable_by_count()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disable_by_count()
 
 
 def find_script(script_name):
@@ -94,7 +92,7 @@ def main(args):
     parser.allow_interspersed_args = False
     parser.add_option('-l', '--line-by-line', action='store_true',
         help="Use the line-by-line profiler from the line_profiler module "
-        "instead of cProfile. Implies --builtin.")
+        "instead of Profile. Implies --builtin.")
     parser.add_option('-b', '--builtin', action='store_true',
         help="Put 'profile' in the builtins. Use 'profile.enable()' and "
             "'profile.disable()' in your code to turn it on and off, or "
@@ -138,11 +136,8 @@ def main(args):
         import line_profiler
         prof = line_profiler.LineProfiler()
         options.builtin = True
-    elif has_cprofile:
-        prof = ContextualProfile()
     else:
-        raise SystemExit("You requested profiling with cProfile, but neither"
-            " cProfile nor lsprof could be imported.")
+        prof = ContextualProfile()
     if options.builtin:
         import __builtin__
         __builtin__.__dict__['profile'] = prof
