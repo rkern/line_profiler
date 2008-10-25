@@ -1,0 +1,11 @@
+syntax: glob
+.gdb_history
+*.pyc
+*.pyo
+*.pyclbr
+*.so
+.*.swp
+.*.swo
+build/
+dist/
+_line_profiler.c
