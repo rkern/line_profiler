@@ -9,3 +9,4 @@ syntax: glob
 build/
 dist/
 _line_profiler.c
+line_profiler.egg-info/
