@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-""" Script to conveniently run the profiler on code in a variety of
-circumstances.
+""" Script to conveniently run profilers on code in a variety of circumstances.
 """
 
 import optparse
@@ -10,7 +9,7 @@ import sys
 
 
 # Guard the import of cProfile such that 2.4 people without lsprof can still use
-# this script with line_profiler.
+# this script.
 try:
     from cProfile import Profile
 except ImportError:

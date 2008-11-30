@@ -137,7 +137,7 @@ nesting, use `enable_by_count()` and `disable_by_count()`. These functions will
 increment and decrement a counter and only actually enable or disable the
 profiler when the count transitions from or to 0.
 
-After profiling, the `dump_stats(filename)` method will marshal the results out
+After profiling, the `dump_stats(filename)` method will pickle the results out
 to the given file. `print_stats([stream])` will print the formatted results to
 sys.stdout or whatever stream you specify. `get_stats()` will return 2-tuple:
 a dictionary containing the results and the timer unit.
@@ -201,7 +201,7 @@ Frequently Asked Questions
     hotshot can do line-by-line timings, too. However, it is deprecated and may
     disappear from the standard library. Also, it can take a long time to
     process the results while I want quick turnaround in my workflows. hotshot
-    pays for this processing time by making itself minimally intrusive to the
+    pays this processing time in order to make itself minimally intrusive to the
     code it is profiling. Code that does network operations, for example, may
     even go down different code paths if profiling slows down execution too
     much. For my use cases, and I think those of many other people, their
@@ -250,6 +250,11 @@ Frequently Asked Questions
     I am open to suggestions on how to make this more robust. Or simple
     admonitions against trying to be clever.
 
+* Why do my list comprehensions have so many hits when I use the LineProfiler?
+
+    LineProfiler records the line with the list comprehension once for each
+    iteration of the list comprehension.
+
 * Why is kernprof distributed with line_profiler? It works with just cProfile,
   right?
 
@@ -277,6 +282,7 @@ Frequently Asked Questions
 
     Both line_profiler and kernprof have been tested with Python 2.4 and Python
     2.5. It might work with Python 2.3, and will probably work with Python 2.6.
+
 
 To Do
 -----

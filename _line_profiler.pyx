@@ -79,6 +79,25 @@ cdef class LineTiming:
         return '<LineTiming for %r\n  lineno: %r\n  nhits: %r\n  total_time: %r>' % (self.code, self.lineno, self.nhits, <long>self.total_time)
 
 
+# Note: this is a regular Python class to allow easy pickling.
+class LineStats(object):
+    """ Object to encapsulate line-profile statistics.
+
+    Attributes
+    ----------
+    timings : dict
+        Mapping from (filename, first_lineno, function_name) of the profiled
+        function to a list of (lineno, nhits, total_time) tuples for each
+        profiled line. total_time is an integer in the native units of the
+        timer.
+    unit : float
+        The number of seconds per timer unit.
+    """
+    def __init__(self, timings, unit):
+        self.timings = timings
+        self.unit = unit
+
+
 cdef class LineProfiler:
     """ Time the execution of lines of Python code.
     """
@@ -140,18 +159,7 @@ cdef class LineProfiler:
         PyEval_SetTrace(NULL, <object>NULL)
 
     def get_stats(self):
-        """ Return a serializable dictionary of the profiling data along with
-        the timer unit.
-
-        Returns
-        -------
-        stats : dict
-            Mapping from (filename, first_lineno, function_name) of the profiled
-            function to a list of (lineno, nhits, total_time) tuples for each
-            profiled line. total_time is an integer in the native units of the
-            timer.
-        timer_unit : float
-            The number of seconds per timer unit.
+        """ Return a LineStats object containing the timings.
         """
         stats = {}
         for code in self.code_map:
@@ -159,7 +167,7 @@ cdef class LineProfiler:
             key = label(code)
             stats[key] = [e.astuple() for e in entries]
             stats[key].sort()
-        return stats, self.timer_unit
+        return LineStats(stats, self.timer_unit)
 
 
 cdef class LastTime:

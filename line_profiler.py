@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import cPickle
 from cStringIO import StringIO
 import inspect
 import linecache
-import marshal
 import optparse
 import os
 import sys
@@ -34,21 +34,21 @@ class LineProfiler(CLineProfiler):
         return f
 
     def dump_stats(self, filename):
-        """ Dump a representation of the data to a file as a marshalled
-        dictionary from `get_stats()`.
+        """ Dump a representation of the data to a file as a pickled LineStats
+        object from `get_stats()`.
         """
-        stats, unit = self.get_stats()
+        lstats= self.get_stats()
         f = open(filename, 'wb')
         try:
-            marshal.dump((stats, unit), f)
+            cPickle.dump(lstats, f, cPickle.HIGHEST_PROTOCOL)
         finally:
             f.close()
 
     def print_stats(self, stream=None):
         """ Show the gathered statistics.
         """
-        stats, unit = self.get_stats()
-        show_text(stats, unit, stream=stream)
+        lstats = self.get_stats()
+        show_text(lstats.timings, lstats.unit, stream=stream)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -82,34 +82,43 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     """
     if stream is None:
         stream = sys.stdout
-    if not os.path.exists(filename):
-        print >>stream, 'Could not find file %s' % filename
-        print >>stream, 'Are you sure you are running this program from the same directory'
-        print >>stream, 'that you ran the profiler from?'
-        return
-    print >>stream, 'File: %s' % filename
-    print >>stream, 'Function: %s at line %s' % (func_name, start_lineno)
-    all_lines = linecache.getlines(filename)
-    sublines = inspect.getblock(all_lines[start_lineno-1:])
+    print >>stream, "File: %s" % filename
+    print >>stream, "Function: %s at line %s" % (func_name, start_lineno)
     template = '%6s %9s %12s %8s %8s  %-s'
     d = {}
     total_time = 0.0
+    linenos = []
     for lineno, nhits, time in timings:
         total_time += time
-    print >>stream, 'Total time: %g s' % (total_time * unit)
+        linenos.append(lineno)
+    print >>stream, "Total time: %g s" % (total_time * unit)
+    if not os.path.exists(filename):
+        print >>stream, ""
+        print >>stream, "Could not find file %s" % filename
+        print >>stream, "Are you sure you are running this program from the same directory"
+        print >>stream, "that you ran the profiler from?"
+        print >>stream, "Continuing without the function's contents."
+        # Fake empty lines so we can see the timings, if not the code.
+        nlines = max(linenos) - min(min(linenos), start_lineno) + 1
+        sublines = [''] * nlines
+    else:
+        all_lines = linecache.getlines(filename)
+        sublines = inspect.getblock(all_lines[start_lineno-1:])
     for lineno, nhits, time in timings:
         d[lineno] = (nhits, time, '%5.1f' % (float(time) / nhits),
             '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
-    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 'Line Contents')
-    print >>stream, ''
+    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 
+        'Line Contents')
+    print >>stream, ""
     print >>stream, header
     print >>stream, '=' * len(header)
     for lineno, line in zip(linenos, sublines):
         nhits, time, per_hit, percent = d.get(lineno, empty)
-        print >>stream, template % (lineno, nhits, time, per_hit, percent, line.rstrip('\n').rstrip('\r'))
-    print >>stream, ''
+        print >>stream, template % (lineno, nhits, time, per_hit, percent,
+            line.rstrip('\n').rstrip('\r'))
+    print >>stream, ""
 
 def show_text(stats, unit, stream=None):
     """ Show text for the given timings.
@@ -146,7 +155,7 @@ def magic_lprun(self, parameter_s=''):
 
     One or more -f options are required to get any useful results.
 
-    -D <filename>: dump the raw statistics out to a marshal file on disk. The
+    -D <filename>: dump the raw statistics out to a pickle file on disk. The
     usual extension for this is ".lprof". These statistics may be viewed later
     by running line_profiler.py as a script.
 
@@ -215,7 +224,7 @@ def magic_lprun(self, parameter_s=''):
     dump_file = opts.D[0]
     if dump_file:
         profile.dump_stats(dump_file)
-        print '\n*** Profile stats marshalled to file',\
+        print '\n*** Profile stats pickled to file',\
               `dump_file`+'.',message
 
     text_file = opts.T[0]
@@ -232,6 +241,17 @@ def magic_lprun(self, parameter_s=''):
 
     return return_value
 
+def load_stats(filename):
+    """ Utility function to load a pickled LineStats object from a given
+    filename.
+    """
+    f = open(filename, 'rb')
+    try:
+        lstats = cPickle.load(f)
+    finally:
+        f.close()
+    return lstats
+
 
 def main():
     usage = "usage: %prog profile.lprof"
@@ -240,10 +260,8 @@ def main():
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Must provide a filename.")
-    f = open(args[0], 'rb')
-    stats, unit = marshal.load(f)
-    f.close()
-    show_text(stats, unit)
+    lstats = load_stats(args[0])
+    show_text(lstats.timings, lstats.unit)
 
 if __name__ == '__main__':
     main()
