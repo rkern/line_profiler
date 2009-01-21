@@ -3,3 +3,4 @@ include LICENSE.txt
 include LICENSE_Python.txt
 include README.txt
 include python25.pxd
+include timers.h
