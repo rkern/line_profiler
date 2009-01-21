@@ -6,6 +6,39 @@ kernprof is a convenient script for running either line_profiler or the Python
 standard library's cProfile or profile modules, depending on what is available.
 
 
+Installation
+============
+
+Source releases and any binaries can be downloaded from the PyPI link.
+
+    http://pypi.python.org/pypi/line_profiler
+
+To check out the development sources, you can use Mercurial_::
+
+    $ hg clone http://www.enthought.com/~rkern/cgi-bin/hgwebdir.cgi/line_profiler
+
+You may also download source tarballs of any snapshot from that URL.
+
+Source releases will require a C compiler in order to build line_profiler. In
+addition, Mercurial checkouts will also require Cython_. Source releases on PyPI
+should contain the pregenerated C sources, so Cython should not be required in
+that case.
+
+kernprof.py is a single-file pure Python script and does not require a compiler.
+If you wish to use it to run cProfile and not line-by-line profiling, you may
+copy it to a directory on your PATH manually and avoid trying to build any
+C extensions.
+
+In order to build and install line_profiler, you will simply use the standard
+`build and install`_ for most Python packages::
+
+    $ python setup.py install
+
+.. _Mercurial: http://www.selenic.com/mercurial/wiki/
+.. _Cython: http://www.cython.org
+.. _build and install: http://docs.python.org/install/index.html
+
+
 line_profiler
 =============
 
@@ -274,9 +307,10 @@ Frequently Asked Questions
 
     You should not have to if you are building from a released source tarball.
     It should contain the generated C sources already. If you are running into
-    problems, that may be a bug; let me know. If you are building from an SVN
-    checkout, you will need Cython to generate the C sources. I'm not sure
-    exactly what version you need, but any recent one should suffice.
+    problems, that may be a bug; let me know. If you are building from
+    a Mercurial checkout or snapshot, you will need Cython to generate the
+    C sources. I'm not sure exactly what version you need, but any recent one
+    should suffice.
 
 * What version of Python do I need?
 
@@ -285,7 +319,7 @@ Frequently Asked Questions
 
 
 To Do
------
+=====
 
 cProfile uses a neat "rotating trees" data structure to minimize the overhead of
 looking up and recording entries. LineProfiler uses Python dictionaries and
@@ -297,7 +331,7 @@ now. Maybe later. Contributions accepted!
 
 
 Bugs and Such
--------------
+=============
 
 If you find a bug, or a missing feature you really want added, please post to
 the enthought-dev_ mailing list or email the author at
