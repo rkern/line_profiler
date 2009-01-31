@@ -37,7 +37,7 @@ class LineProfiler(CLineProfiler):
         """ Dump a representation of the data to a file as a pickled LineStats
         object from `get_stats()`.
         """
-        lstats= self.get_stats()
+        lstats = self.get_stats()
         f = open(filename, 'wb')
         try:
             cPickle.dump(lstats, f, cPickle.HIGHEST_PROTOCOL)
