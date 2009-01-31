@@ -27,9 +27,9 @@ To check out the development sources, you can use Mercurial_::
 You may also download source tarballs of any snapshot from that URL.
 
 Source releases will require a C compiler in order to build line_profiler. In
-addition, Mercurial checkouts will also require Cython_. Source releases on PyPI
-should contain the pregenerated C sources, so Cython should not be required in
-that case.
+addition, Mercurial checkouts will also require Cython_ >= 0.10. Source releases
+on PyPI should contain the pregenerated C sources, so Cython should not be
+required in that case.
 
 kernprof.py is a single-file pure Python script and does not require a compiler.
 If you wish to use it to run cProfile and not line-by-line profiling, you may
@@ -324,8 +324,8 @@ Frequently Asked Questions
     It should contain the generated C sources already. If you are running into
     problems, that may be a bug; let me know. If you are building from
     a Mercurial checkout or snapshot, you will need Cython to generate the
-    C sources. I'm not sure exactly what version you need, but any recent one
-    should suffice.
+    C sources. You will probably need version 0.10 or higher. There is a bug in
+    some earlier versions in how it handles NULL PyObject* pointers.
 
 * What version of Python do I need?
 

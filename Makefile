@@ -9,4 +9,10 @@ pypi-site-docs.zip: index.html kernprof.py LICENSE.txt
 
 site: pypi-site-docs.zip
 
-.PHONY: site
+# We need to run build_ext first to make sure we have _line_profiler.c.
+# However, we can't run both commands in the same run.
+sdist:
+	python setup.py build_ext
+	python setup.py sdist
+
+.PHONY: site sdist

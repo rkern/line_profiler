@@ -31,6 +31,7 @@ setup(
     author_email = 'robert.kern@enthought.com',
     description = 'Line-by-line profiler.',
     long_description = long_description,
+    url = 'http://packages.python.org/line_profiler',
     ext_modules = [ 
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c'],
