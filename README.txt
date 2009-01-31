@@ -5,6 +5,9 @@ line_profiler is a module for doing line-by-line profiling of functions.
 kernprof is a convenient script for running either line_profiler or the Python
 standard library's cProfile or profile modules, depending on what is available.
 
+They are available under a `BSD license`_.
+
+.. _BSD license: http://packages.python.org/line_profiler/LICENSE.txt
 
 Installation
 ============
@@ -12,6 +15,10 @@ Installation
 Source releases and any binaries can be downloaded from the PyPI link.
 
     http://pypi.python.org/pypi/line_profiler
+
+The current release of the kernprof.py script may be downloaded separately here:
+
+    http://packages.python.org/line_profiler/kernprof.py
 
 To check out the development sources, you can use Mercurial_::
 
@@ -172,8 +179,9 @@ profiler when the count transitions from or to 0.
 
 After profiling, the `dump_stats(filename)` method will pickle the results out
 to the given file. `print_stats([stream])` will print the formatted results to
-sys.stdout or whatever stream you specify. `get_stats()` will return 2-tuple:
-a dictionary containing the results and the timer unit.
+sys.stdout or whatever stream you specify. `get_stats()` will return LineStats
+object, which just holds two attributes: a dictionary containing the results and
+the timer unit.
 
 
 kernprof
@@ -219,6 +227,13 @@ can be read with pstats.Stats(). They may be interactively viewed with the
 command::
 
     $ python -m pstats script_to_profile.py.prof
+
+Such files may also be viewed with graphical tools like kcachegrind_ through the
+converter program pyprof2calltree_ or RunSnakeRun_.
+
+.. _kcachegrind: http://kcachegrind.sourceforge.net/html/Home.html
+.. _pyprof2calltree: http://pypi.python.org/pypi/pyprof2calltree/
+.. _RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
 
 
 Frequently Asked Questions
@@ -316,6 +331,11 @@ Frequently Asked Questions
 
     Both line_profiler and kernprof have been tested with Python 2.4 and Python
     2.5. It might work with Python 2.3, and will probably work with Python 2.6.
+
+* I get negative line timings! What's going on?
+
+    This is a known bug on Windows. I'm working on it. If you see it anywhere
+    else, let me know.
 
 
 To Do
