@@ -11,3 +11,5 @@ dist/
 _line_profiler.c
 line_profiler.egg-info/
 MANIFEST
+pypi-site-docs.zip
+index.html
