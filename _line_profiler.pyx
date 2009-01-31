@@ -55,8 +55,10 @@ cdef class LineTiming:
     """
     cdef public object code
     cdef public int lineno
-    cdef public long total_time
-    cdef public long nhits
+    # Note: leave at least total_time private. This should help compile under
+    # Python 2.4.
+    cdef PY_LONG_LONG total_time
+    cdef long nhits
 
     def __init__(self, object code, int lineno):
         self.code = code
@@ -68,7 +70,7 @@ cdef class LineTiming:
         """ Record a line timing.
         """
         self.nhits += 1
-        self.total_time += <long>dt
+        self.total_time += dt
 
     def astuple(self):
         """ Convert to a tuple of (lineno, nhits, total_time).
