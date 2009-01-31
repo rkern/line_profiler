@@ -9,6 +9,9 @@ They are available under a `BSD license`_.
 
 .. _BSD license: http://packages.python.org/line_profiler/LICENSE.txt
 
+.. contents::
+
+
 Installation
 ============
 
@@ -334,8 +337,9 @@ Frequently Asked Questions
 
 * I get negative line timings! What's going on?
 
-    This is a known bug on Windows. I'm working on it. If you see it anywhere
-    else, let me know.
+    There was a bug in 1.0b1 on Windows that resulted in this. It should be
+    fixed in 1.0b2. If you are still seeing negative numbers, please let me
+    know.
 
 
 To Do
@@ -358,3 +362,19 @@ the enthought-dev_ mailing list or email the author at
 <robert.kern@enthought.com>.
 
 .. _enthought-dev : https://mail.enthought.com/mailman/listinfo/enthought-dev
+
+
+Changes
+=======
+
+1.0b2
+~~~~~
+
+* BUG: fixed line timing overflow on Windows.
+* DOC: improved the README.
+
+1.0b1
+~~~~~
+
+* Initial release.
+
