@@ -86,8 +86,8 @@ def find_script(script_name):
     raise SystemExit(1)
 
 def main(args):
-    usage = "%s [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
-    parser = optparse.OptionParser(usage=usage % sys.argv[0])
+    usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
+    parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
     parser.allow_interspersed_args = False
     parser.add_option('-l', '--line-by-line', action='store_true',
         help="Use the line-by-line profiler from the line_profiler module "

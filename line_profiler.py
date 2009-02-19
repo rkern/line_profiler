@@ -255,7 +255,7 @@ def load_stats(filename):
 
 def main():
     usage = "usage: %prog profile.lprof"
-    parser = optparse.OptionParser(usage)
+    parser = optparse.OptionParser(usage=usage, version='%prog 1.0b2')
 
     options, args = parser.parse_args()
     if len(args) != 1:
