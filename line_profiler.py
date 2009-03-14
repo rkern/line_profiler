@@ -12,6 +12,13 @@ import sys
 from _line_profiler import LineProfiler as CLineProfiler
 
 
+CO_GENERATOR = 0x0020
+def is_generator(f):
+    """ Return True if a function is a generator.
+    """
+    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
+    return isgen
+
 class LineProfiler(CLineProfiler):
     """ A profiler that records the execution times of individual lines.
     """
@@ -20,17 +27,33 @@ class LineProfiler(CLineProfiler):
         """ Decorate a function to start the profiler on function entry and stop
         it on function exit.
         """
-        def f(*args, **kwds):
-            self.add_function(func)
-            self.enable_by_count()
-            try:
-                result = func(*args, **kwds)
-            finally:
-                self.disable_by_count()
-            return result
+        self.add_function(func)
+        if is_generator(func):
+            def f(*args, **kwds):
+                self.enable_by_count()
+                try:
+                    g = func(*args, **kwds)
+                finally:
+                    self.disable_by_count()
+                while True:
+                    self.enable_by_count()
+                    try:
+                        yield g.next()
+                    finally:
+                        self.disable_by_count()
+        else:
+            # Just a regular function.
+            def f(*args, **kwds):
+                self.enable_by_count()
+                try:
+                    result = func(*args, **kwds)
+                finally:
+                    self.disable_by_count()
+                return result
+        f.__module__ = func.__module__
         f.__name__ = func.__name__
         f.__doc__ = func.__doc__
-        f.__dict__.update(func.__dict__)
+        f.__dict__.update(getattr(func, '__dict__', {}))
         return f
 
     def dump_stats(self, filename):
