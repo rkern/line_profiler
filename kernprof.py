@@ -19,6 +19,41 @@ except ImportError:
         from profile import Profile
 
 
+CO_GENERATOR = 0x0020
+def is_generator(f):
+    """ Return True if a function is a generator.
+    """
+    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
+    return isgen
+
+# FIXME: refactor this stuff so that both LineProfiler and ContextualProfile can
+# use the same implementation.
+# Code to exec inside of ContextualProfile.__call__ to support PEP-342-style
+# generators in Python 2.5+.
+pep342_gen_wrapper = '''
+def wrap_generator(self, func):
+    """ Wrap a generator to profile it.
+    """
+    def f(*args, **kwds):
+        g = func(*args, **kwds)
+        # The first iterate will not be a .send()
+        self.enable_by_count()
+        try:
+            item = g.next()
+        finally:
+            self.disable_by_count()
+        input = (yield item)
+        # But any following one might be.
+        while True:
+            self.enable_by_count()
+            try:
+                item = g.send(input)
+            finally:
+                self.disable_by_count()
+            input = (yield item)
+    return f
+'''
+
 class ContextualProfile(Profile):
     """ A subclass of Profile that adds a context manager for Python
     2.5 with: statements and a decorator.
@@ -48,6 +83,41 @@ class ContextualProfile(Profile):
         """ Decorate a function to start the profiler on function entry and stop
         it on function exit.
         """
+        # FIXME: refactor this into a utility function so that both it and
+        # line_profiler can use it.
+        self.add_function(func)
+        if is_generator(func):
+            f = self.wrap_generator()
+        else:
+            f = self.wrap_function()
+        f.__module__ = func.__module__
+        f.__name__ = func.__name__
+        f.__doc__ = func.__doc__
+        f.__dict__.update(getattr(func, '__dict__', {}))
+        return f
+
+    if sys.version_info[:2] >= (2,5):
+        # Delay compilation because the syntax is not compatible with older
+        # Python versions.
+        exec pep342_gen_wrapper
+    else:
+        def wrap_generator(self, func):
+            """ Wrap a generator to profile it.
+            """
+            def f(*args, **kwds):
+                g = func(*args, **kwds)
+                while True:
+                    self.enable_by_count()
+                    try:
+                        item = g.next()
+                    finally:
+                        self.disable_by_count()
+                    yield item
+            return f
+
+    def wrap_function(self, func):
+        """ Wrap a function to profile it.
+        """
         def f(*args, **kwds):
             self.enable_by_count()
             try:
@@ -55,9 +125,6 @@ class ContextualProfile(Profile):
             finally:
                 self.disable_by_count()
             return result
-        f.__name__ = func.__name__
-        f.__doc__ = func.__doc__
-        f.__dict__.update(func.__dict__)
         return f
 
     def __enter__(self):

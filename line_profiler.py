@@ -19,6 +19,32 @@ def is_generator(f):
     isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
     return isgen
 
+# Code to exec inside of LineProfiler.__call__ to support PEP-342-style
+# generators in Python 2.5+.
+pep342_gen_wrapper = '''
+def wrap_generator(self, func):
+    """ Wrap a generator to profile it.
+    """
+    def f(*args, **kwds):
+        g = func(*args, **kwds)
+        # The first iterate will not be a .send()
+        self.enable_by_count()
+        try:
+            item = g.next()
+        finally:
+            self.disable_by_count()
+        input = (yield item)
+        # But any following one might be.
+        while True:
+            self.enable_by_count()
+            try:
+                item = g.send(input)
+            finally:
+                self.disable_by_count()
+            input = (yield item)
+    return f
+'''
+
 class LineProfiler(CLineProfiler):
     """ A profiler that records the execution times of individual lines.
     """
@@ -29,31 +55,44 @@ class LineProfiler(CLineProfiler):
         """
         self.add_function(func)
         if is_generator(func):
-            def f(*args, **kwds):
-                self.enable_by_count()
-                try:
-                    g = func(*args, **kwds)
-                finally:
-                    self.disable_by_count()
-                while True:
-                    self.enable_by_count()
-                    try:
-                        yield g.next()
-                    finally:
-                        self.disable_by_count()
+            f = self.wrap_generator(func)
         else:
-            # Just a regular function.
-            def f(*args, **kwds):
-                self.enable_by_count()
-                try:
-                    result = func(*args, **kwds)
-                finally:
-                    self.disable_by_count()
-                return result
+            f = self.wrap_function(func)
         f.__module__ = func.__module__
         f.__name__ = func.__name__
         f.__doc__ = func.__doc__
         f.__dict__.update(getattr(func, '__dict__', {}))
+        return f
+
+    if sys.version_info[:2] >= (2,5):
+        # Delay compilation because the syntax is not compatible with older
+        # Python versions.
+        exec pep342_gen_wrapper
+    else:
+        def wrap_generator(self, func):
+            """ Wrap a generator to profile it.
+            """
+            def f(*args, **kwds):
+                g = func(*args, **kwds)
+                while True:
+                    self.enable_by_count()
+                    try:
+                        item = g.next()
+                    finally:
+                        self.disable_by_count()
+                    yield item
+            return f
+
+    def wrap_function(self, func):
+        """ Wrap a function to profile it.
+        """
+        def f(*args, **kwds):
+            self.enable_by_count()
+            try:
+                result = func(*args, **kwds)
+            finally:
+                self.disable_by_count()
+            return result
         return f
 
     def dump_stats(self, filename):
