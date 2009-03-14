@@ -2,8 +2,6 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.log import warn
-import os
-import sys
 
 try:
     from Cython.Distutils import build_ext
