@@ -85,11 +85,10 @@ class ContextualProfile(Profile):
         """
         # FIXME: refactor this into a utility function so that both it and
         # line_profiler can use it.
-        self.add_function(func)
         if is_generator(func):
-            f = self.wrap_generator()
+            f = self.wrap_generator(func)
         else:
-            f = self.wrap_function()
+            f = self.wrap_function(func)
         f.__module__ = func.__module__
         f.__name__ = func.__name__
         f.__doc__ = func.__doc__
