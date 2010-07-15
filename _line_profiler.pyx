@@ -2,7 +2,7 @@ from python25 cimport PyFrameObject, PyObject, PyStringObject
 
 
 cdef extern from "frameobject.h":
-    ctypedef int (*Py_tracefunc)(object self, PyFrameObject *py_frame, int what, object arg)
+    ctypedef int (*Py_tracefunc)(object self, PyFrameObject *py_frame, int what, PyObject *arg)
 
 cdef extern from "Python.h":
     ctypedef long long PY_LONG_LONG
@@ -184,7 +184,7 @@ cdef class LastTime:
 
 
 cdef int python_trace_callback(object self, PyFrameObject *py_frame, int what,
-    object arg):
+    PyObject *arg):
     """ The PyEval_SetTrace() callback.
     """
     cdef object code, line_entries, key
