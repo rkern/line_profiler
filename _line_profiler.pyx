@@ -37,6 +37,9 @@ cdef extern from "timers.h":
     PY_LONG_LONG hpTimer()
     double hpTimerUnit()
 
+cdef extern from "unset_trace.h":
+    void unset_trace()
+
 
 def label(code):
     """ Return a (filename, first_lineno, func_name) tuple for a given code
@@ -158,7 +161,7 @@ cdef class LineProfiler:
 
     def disable(self):
         self.last_time = {}
-        PyEval_SetTrace(NULL, <object>NULL)
+        unset_trace()
 
     def get_stats(self):
         """ Return a LineStats object containing the timings.

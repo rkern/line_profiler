@@ -32,7 +32,7 @@ setup(
     url = 'http://packages.python.org/line_profiler',
     ext_modules = [ 
         Extension('_line_profiler',
-                  sources=[line_profiler_source, 'timers.c'],
+                  sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
                   depends=['python25.pxd'],
         ),
     ],
