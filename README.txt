@@ -25,7 +25,7 @@ The current release of the kernprof.py script may be downloaded separately here:
 
 To check out the development sources, you can use Mercurial_::
 
-    $ hg clone http://www.enthought.com/~rkern/cgi-bin/hgwebdir.cgi/line_profiler
+    $ hg clone https://bitbucket.org/robertkern/line_profiler
 
 You may also download source tarballs of any snapshot from that URL.
 
@@ -148,8 +148,9 @@ line. There are six columns of information.
 If you are using IPython, there is an implementation of an %lprun magic command
 which will let you specify functions to profile and a statement to execute. It
 will also add its LineProfiler instance into the __builtins__, but typically,
-you would not use it like that. You can install it by editing the IPython
-configuration file ~/.ipython/ipy_user_conf.py to add the following lines::
+you would not use it like that. For IPython 0.10, you can install it by editing
+the IPython configuration file ~/.ipython/ipy_user_conf.py to add the following
+lines::
 
     # These two lines are standard and probably already there.
     import IPython.ipapi
@@ -158,6 +159,15 @@ configuration file ~/.ipython/ipy_user_conf.py to add the following lines::
     # These two are the important ones.
     import line_profiler
     ip.expose_magic('lprun', line_profiler.magic_lprun)
+
+For IPython 0.11+, you can install it by editing the IPython configuration file
+~/.ipython/profile_default/ipython_config.py to add the `'line_profiler'` item
+to the extensions list::
+
+    c.TerminalIPythonApp.extensions = [
+        'line_profiler',
+    ]
+
 
 To get usage help for %lprun, use the standard IPython help mechanism::
 
@@ -332,8 +342,8 @@ Frequently Asked Questions
 
 * What version of Python do I need?
 
-    Both line_profiler and kernprof have been tested with Python 2.4 and Python
-    2.5. It might work with Python 2.3, and will probably work with Python 2.6.
+    Both line_profiler and kernprof have been tested with Python 2.4-2.7.
+    It might work with Python 2.3, but does not currently work with Python 3.x.
 
 * I get negative line timings! What's going on?
 
@@ -366,6 +376,15 @@ the enthought-dev_ mailing list or email the author at
 
 Changes
 =======
+
+1.0b3
+~~~~~
+
+* ENH: Profile generators.
+* BUG: Update for compatibility with newer versions of Cython. Thanks to Ondrej
+  Certik for spotting the bug.
+* BUG: Update IPython compatibility for 0.11+. Thanks to Yaroslav Halchenko and
+  others for providing the updated imports.
 
 1.0b2
 ~~~~~
