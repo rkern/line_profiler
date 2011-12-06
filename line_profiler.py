@@ -226,10 +226,18 @@ def magic_lprun(self, parameter_s=''):
 
     -r: return the LineProfiler object after it has completed profiling.
     """
-    # Local import to avoid hard dependency.
-    from IPython.genutils import page
-    from IPython.ipstruct import Struct
-    from IPython.ipapi import UsageError
+    # Local imports to avoid hard dependency.
+    from distutils.version import LooseVersion
+    import IPython
+    ipython_version = LooseVersion(IPython.__version__)
+    if ipython_version < '0.11':
+        from IPython.genutils import page
+        from IPython.ipstruct import Struct
+        from IPython.ipapi import UsageError
+    else:
+        from IPython.core.page import page
+        from IPython.utils.ipstruct import Struct
+        from IPython.core.error import UsageError
 
     # Escape quote markers.
     opts_def = Struct(D=[''], T=[''], f=[])
@@ -280,7 +288,10 @@ def magic_lprun(self, parameter_s=''):
     output = stdout_trap.getvalue()
     output = output.rstrip()
 
-    page(output, screen_lines=self.shell.rc.screen_length)
+    if ipython_version < '0.11':
+        page(output, screen_lines=self.shell.rc.screen_length)
+    else:
+        page(output)
     print message,
 
     dump_file = opts.D[0]
@@ -302,6 +313,13 @@ def magic_lprun(self, parameter_s=''):
         return_value = profile
 
     return return_value
+
+
+def load_ipython_extension(ip):
+    """ API for IPython to recognize this module as an IPython extension.
+    """
+    ip.define_magic('lprun', magic_lprun)
+
 
 def load_stats(filename):
     """ Utility function to load a pickled LineStats object from a given
