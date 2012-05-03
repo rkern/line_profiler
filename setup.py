@@ -1,4 +1,6 @@
+import os.path
 
+import distutils.errors
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.log import warn
@@ -8,9 +10,14 @@ try:
     cmdclass = dict(build_ext=build_ext)
     line_profiler_source = '_line_profiler.pyx'
 except ImportError, e:
-    warn("Could not import Cython. Using pre-generated C file if available.")
     cmdclass = {}
     line_profiler_source = '_line_profiler.c'
+    if not os.path.exists(line_profiler_source):
+        raise distutils.errors.DistutilsError("""\
+You need cython to build the line_profiler from a mercurial checkout, or
+alternatively use a release tarball from PyPI to build it without cython.""")
+    else:
+        warn("Could not import Cython. Using pre-generated C file if available.")
 
 long_description = """\
 line_profiler will profile the time individual lines of code take to execute.
