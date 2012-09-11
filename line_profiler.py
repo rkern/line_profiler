@@ -164,6 +164,8 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
     else:
+        # Clear the cache to ensure that we get up-to-date results.
+        linecache.clearcache()
         all_lines = linecache.getlines(filename)
         sublines = inspect.getblock(all_lines[start_lineno-1:])
     for lineno, nhits, time in timings:
