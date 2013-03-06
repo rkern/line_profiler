@@ -46,8 +46,7 @@ CO_GENERATOR = 0x0020
 def is_generator(f):
     """ Return True if a function is a generator.
     """
-    func_code = f.__code__
-    isgen = (func_code.co_flags & CO_GENERATOR) != 0
+    isgen = (f.__code__.co_flags & CO_GENERATOR) != 0
     return isgen
 
 class LineProfiler(CLineProfiler):

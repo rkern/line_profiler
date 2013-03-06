@@ -8,8 +8,8 @@ import os
 import sys
 
 
-# Guard the import of cProfile such that 2.4 people without lsprof can still use
-# this script.
+# Guard the import of cProfile such that 3.x people
+# without lsprof can still use this script.
 try:
     from cProfile import Profile
 except ImportError:
@@ -19,40 +19,29 @@ except ImportError:
         from profile import Profile
 
 
+# Python 3.x compatibility utils: execfile
+# ========================================
+try:
+    execfile
+except NameError:
+    # Python 3.x doesn't have 'execfile' builtin
+    import builtins
+    exec_ = getattr(builtins, "exec")
+
+    def execfile(filename, globals=None, locals=None):
+        with open(filename) as f:
+            exec_(compile(f.read(), filename, 'exec'), globals, locals)
+# =====================================
+
+
+
 CO_GENERATOR = 0x0020
 def is_generator(f):
     """ Return True if a function is a generator.
     """
-    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
+    isgen = (f.__code__.co_flags & CO_GENERATOR) != 0
     return isgen
 
-# FIXME: refactor this stuff so that both LineProfiler and ContextualProfile can
-# use the same implementation.
-# Code to exec inside of ContextualProfile.__call__ to support PEP-342-style
-# generators in Python 2.5+.
-pep342_gen_wrapper = '''
-def wrap_generator(self, func):
-    """ Wrap a generator to profile it.
-    """
-    def f(*args, **kwds):
-        g = func(*args, **kwds)
-        # The first iterate will not be a .send()
-        self.enable_by_count()
-        try:
-            item = g.next()
-        finally:
-            self.disable_by_count()
-        input = (yield item)
-        # But any following one might be.
-        while True:
-            self.enable_by_count()
-            try:
-                item = g.send(input)
-            finally:
-                self.disable_by_count()
-            input = (yield item)
-    return f
-'''
 
 class ContextualProfile(Profile):
     """ A subclass of Profile that adds a context manager for Python
@@ -95,24 +84,29 @@ class ContextualProfile(Profile):
         f.__dict__.update(getattr(func, '__dict__', {}))
         return f
 
-    if sys.version_info[:2] >= (2,5):
-        # Delay compilation because the syntax is not compatible with older
-        # Python versions.
-        exec pep342_gen_wrapper
-    else:
-        def wrap_generator(self, func):
-            """ Wrap a generator to profile it.
-            """
-            def f(*args, **kwds):
-                g = func(*args, **kwds)
-                while True:
-                    self.enable_by_count()
-                    try:
-                        item = g.next()
-                    finally:
-                        self.disable_by_count()
-                    yield item
-            return f
+    # FIXME: refactor this stuff so that both LineProfiler and
+    # ContextualProfile can use the same implementation.
+    def wrap_generator(self, func):
+        """ Wrap a generator to profile it.
+        """
+        def f(*args, **kwds):
+            g = func(*args, **kwds)
+            # The first iterate will not be a .send()
+            self.enable_by_count()
+            try:
+                item = next(g)
+            finally:
+                self.disable_by_count()
+            input = (yield item)
+            # But any following one might be.
+            while True:
+                self.enable_by_count()
+                try:
+                    item = g.send(input)
+                finally:
+                    self.disable_by_count()
+                input = (yield item)
+        return f
 
     def wrap_function(self, func):
         """ Wrap a function to profile it.
@@ -148,8 +142,9 @@ def find_script(script_name):
         if os.path.isfile(fn):
             return fn
 
-    print >>sys.stderr, 'Could not find script %s' % script_name
+    sys.stderr.write('Could not find script %s\n' % script_name)
     raise SystemExit(1)
+
 
 def main(args):
     usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
@@ -204,8 +199,11 @@ def main(args):
     else:
         prof = ContextualProfile()
     if options.builtin:
-        import __builtin__
-        __builtin__.__dict__['profile'] = prof
+        try:
+            import builtins
+        except ImportError: # Python 2.x
+            import __builtin__ as builtins
+        builtins.__dict__['profile'] = prof
 
     script_file = find_script(sys.argv[0])
     __file__ = script_file
@@ -216,16 +214,17 @@ def main(args):
 
     try:
         try:
+            execfile_ = execfile
             ns = locals()
             if options.builtin:
                 execfile(script_file, ns, ns)
             else:
-                prof.runctx('execfile(%r)' % (script_file,), ns, ns)
+                prof.runctx('execfile_(%r, globals())' % (script_file,), ns, ns)
         except (KeyboardInterrupt, SystemExit):
             pass
     finally:
         prof.dump_stats(options.outfile)
-        print 'Wrote profile results to %s' % options.outfile
+        print('Wrote profile results to %s' % options.outfile)
         if options.view:
             prof.print_stats()
 
