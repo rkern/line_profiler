@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-from __future__ import with_statement
 try:
     import cPickle as pickle
 except ImportError:
@@ -22,12 +21,6 @@ from _line_profiler import LineProfiler as CLineProfiler
 # Python 2/3 compatibility utils
 # ===========================================================
 PY3 = sys.version_info[0] == 3
-
-# next:
-try:
-    next_ = next
-except NameError:
-    next_ = lambda obj: obj.next()
 
 # exec (from https://bitbucket.org/gutworth/six/):
 if PY3:
@@ -53,35 +46,9 @@ CO_GENERATOR = 0x0020
 def is_generator(f):
     """ Return True if a function is a generator.
     """
-    func_code = f.__code__ if PY3 else f.func_code
+    func_code = f.__code__
     isgen = (func_code.co_flags & CO_GENERATOR) != 0
     return isgen
-
-# Code to exec inside of LineProfiler.__call__ to support PEP-342-style
-# generators in Python 2.5+.
-pep342_gen_wrapper = '''
-def wrap_generator(self, func):
-    """ Wrap a generator to profile it.
-    """
-    def f(*args, **kwds):
-        g = func(*args, **kwds)
-        # The first iterate will not be a .send()
-        self.enable_by_count()
-        try:
-            item = next_(g)
-        finally:
-            self.disable_by_count()
-        input = (yield item)
-        # But any following one might be.
-        while True:
-            self.enable_by_count()
-            try:
-                item = g.send(input)
-            finally:
-                self.disable_by_count()
-            input = (yield item)
-    return f
-'''
 
 class LineProfiler(CLineProfiler):
     """ A profiler that records the execution times of individual lines.
@@ -102,24 +69,27 @@ class LineProfiler(CLineProfiler):
         f.__dict__.update(getattr(func, '__dict__', {}))
         return f
 
-    if sys.version_info[:2] >= (2,5):
-        # Delay compilation because the syntax is not compatible with older
-        # Python versions.
-        exec_(pep342_gen_wrapper)
-    else:
-        def wrap_generator(self, func):
-            """ Wrap a generator to profile it.
-            """
-            def f(*args, **kwds):
-                g = func(*args, **kwds)
-                while True:
-                    self.enable_by_count()
-                    try:
-                        item = next_(g)
-                    finally:
-                        self.disable_by_count()
-                    yield item
-            return f
+    def wrap_generator(self, func):
+        """ Wrap a generator to profile it.
+        """
+        def f(*args, **kwds):
+            g = func(*args, **kwds)
+            # The first iterate will not be a .send()
+            self.enable_by_count()
+            try:
+                item = next(g)
+            finally:
+                self.disable_by_count()
+            input = (yield item)
+            # But any following one might be.
+            while True:
+                self.enable_by_count()
+                try:
+                    item = g.send(input)
+                finally:
+                    self.disable_by_count()
+                input = (yield item)
+        return f
 
     def wrap_function(self, func):
         """ Wrap a function to profile it.
@@ -138,11 +108,8 @@ class LineProfiler(CLineProfiler):
         object from `get_stats()`.
         """
         lstats = self.get_stats()
-        f = open(filename, 'wb')
-        try:
+        with open(filename, 'wb') as f:
             pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
-        finally:
-            f.close()
 
     def print_stats(self, stream=None):
         """ Show the gathered statistics.
@@ -298,10 +265,7 @@ def magic_lprun(self, parameter_s=''):
     for name in opts.f:
         try:
             funcs.append(eval(name, global_ns, local_ns))
-        except Exception:
-            # "except Exception as e" is not supported in Python 2.5
-            # so we're using a hack to get the exception
-            e = sys.exc_info()[1]
+        except Exception as e:
             raise UsageError('Could not find function %r.\n%s: %s' % (name,
                 e.__class__.__name__, e))
 

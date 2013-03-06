@@ -127,13 +127,9 @@ cdef class LineProfiler:
         try:
             code = func.__code__
         except AttributeError:
-            try:
-                # Python 2.x
-                code = func.func_code
-            except AttributeError:
-                import warnings
-                warnings.warn("Could not extract a code object for the object %r" % (func,))
-                return
+            import warnings
+            warnings.warn("Could not extract a code object for the object %r" % (func,))
+            return
         if code not in self.code_map:
             self.code_map[code] = {}
             self.functions.append(func)
