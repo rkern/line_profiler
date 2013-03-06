@@ -9,7 +9,7 @@ try:
     from Cython.Distutils import build_ext
     cmdclass = dict(build_ext=build_ext)
     line_profiler_source = '_line_profiler.pyx'
-except ImportError, e:
+except ImportError:
     cmdclass = {}
     line_profiler_source = '_line_profiler.c'
     if not os.path.exists(line_profiler_source):
@@ -37,7 +37,7 @@ setup(
     description = 'Line-by-line profiler.',
     long_description = long_description,
     url = 'http://packages.python.org/line_profiler',
-    ext_modules = [ 
+    ext_modules = [
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
                   depends=['python25.pxd'],
@@ -51,6 +51,14 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: C",
         "Programming Language :: Python",
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: Implementation :: CPython',
         "Topic :: Software Development",
     ],
     py_modules = ['line_profiler'],

@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+from __future__ import with_statement
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
-import cPickle
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import inspect
 import linecache
 import optparse
@@ -11,12 +19,42 @@ import sys
 
 from _line_profiler import LineProfiler as CLineProfiler
 
+# Python 2/3 compatibility utils
+# ===========================================================
+PY3 = sys.version_info[0] == 3
+
+# next:
+try:
+    next_ = next
+except NameError:
+    next_ = lambda obj: obj.next()
+
+# exec (from https://bitbucket.org/gutworth/six/):
+if PY3:
+    import builtins
+    exec_ = getattr(builtins, "exec")
+    del builtins
+else:
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+# ============================================================
 
 CO_GENERATOR = 0x0020
 def is_generator(f):
     """ Return True if a function is a generator.
     """
-    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
+    func_code = f.__code__ if PY3 else f.func_code
+    isgen = (func_code.co_flags & CO_GENERATOR) != 0
     return isgen
 
 # Code to exec inside of LineProfiler.__call__ to support PEP-342-style
@@ -30,7 +68,7 @@ def wrap_generator(self, func):
         # The first iterate will not be a .send()
         self.enable_by_count()
         try:
-            item = g.next()
+            item = next_(g)
         finally:
             self.disable_by_count()
         input = (yield item)
@@ -67,7 +105,7 @@ class LineProfiler(CLineProfiler):
     if sys.version_info[:2] >= (2,5):
         # Delay compilation because the syntax is not compatible with older
         # Python versions.
-        exec pep342_gen_wrapper
+        exec_(pep342_gen_wrapper)
     else:
         def wrap_generator(self, func):
             """ Wrap a generator to profile it.
@@ -77,7 +115,7 @@ class LineProfiler(CLineProfiler):
                 while True:
                     self.enable_by_count()
                     try:
-                        item = g.next()
+                        item = next_(g)
                     finally:
                         self.disable_by_count()
                     yield item
@@ -102,7 +140,7 @@ class LineProfiler(CLineProfiler):
         lstats = self.get_stats()
         f = open(filename, 'wb')
         try:
-            cPickle.dump(lstats, f, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
         finally:
             f.close()
 
@@ -116,15 +154,15 @@ class LineProfiler(CLineProfiler):
         """ Profile a single executable statment in the main namespace.
         """
         import __main__
-        dict = __main__.__dict__
-        return self.runctx(cmd, dict, dict)
+        main_dict = __main__.__dict__
+        return self.runctx(cmd, main_dict, main_dict)
 
     def runctx(self, cmd, globals, locals):
         """ Profile a single executable statement in the given namespaces.
         """
         self.enable_by_count()
         try:
-            exec cmd in globals, locals
+            exec_(cmd, globals, locals)
         finally:
             self.disable_by_count()
         return self
@@ -144,8 +182,9 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     """
     if stream is None:
         stream = sys.stdout
-    print >>stream, "File: %s" % filename
-    print >>stream, "Function: %s at line %s" % (func_name, start_lineno)
+
+    stream.write("File: %s\n" % filename)
+    stream.write("Function: %s at line %s\n" % (func_name, start_lineno))
     template = '%6s %9s %12s %8s %8s  %-s'
     d = {}
     total_time = 0.0
@@ -153,13 +192,13 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     for lineno, nhits, time in timings:
         total_time += time
         linenos.append(lineno)
-    print >>stream, "Total time: %g s" % (total_time * unit)
+    stream.write("Total time: %g s\n" % (total_time * unit))
     if not os.path.exists(filename):
-        print >>stream, ""
-        print >>stream, "Could not find file %s" % filename
-        print >>stream, "Are you sure you are running this program from the same directory"
-        print >>stream, "that you ran the profiler from?"
-        print >>stream, "Continuing without the function's contents."
+        stream.write("\n")
+        stream.write("Could not find file %s\n" % filename)
+        stream.write("Are you sure you are running this program from the same directory\n")
+        stream.write("that you ran the profiler from?\n")
+        stream.write("Continuing without the function's contents.\n")
         # Fake empty lines so we can see the timings, if not the code.
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
@@ -173,24 +212,28 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
             '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
-    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 
+    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
         'Line Contents')
-    print >>stream, ""
-    print >>stream, header
-    print >>stream, '=' * len(header)
+    stream.write("\n")
+    stream.write(header)
+    stream.write("\n")
+    stream.write('=' * len(header))
+    stream.write("\n")
     for lineno, line in zip(linenos, sublines):
         nhits, time, per_hit, percent = d.get(lineno, empty)
-        print >>stream, template % (lineno, nhits, time, per_hit, percent,
-            line.rstrip('\n').rstrip('\r'))
-    print >>stream, ""
+        txt = template % (lineno, nhits, time, per_hit, percent,
+                          line.rstrip('\n').rstrip('\r'))
+        stream.write(txt)
+        stream.write("\n")
+    stream.write("\n")
 
 def show_text(stats, unit, stream=None):
     """ Show text for the given timings.
     """
     if stream is None:
         stream = sys.stdout
-    print >>stream, 'Timer unit: %g s' % unit
-    print >>stream, ''
+
+    stream.write('Timer unit: %g s\n\n' % unit)
     for (fn, lineno, name), timings in sorted(stats.items()):
         show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream)
 
@@ -208,7 +251,7 @@ def magic_lprun(self, parameter_s=''):
     pager once the statement has completed.
 
     Options:
-    
+
     -f <function>: LineProfiler only profiles functions and methods it is told
     to profile.  This option tells the profiler about these functions. Multiple
     -f options may be used. The argument may be any expression that gives
@@ -243,7 +286,7 @@ def magic_lprun(self, parameter_s=''):
 
     # Escape quote markers.
     opts_def = Struct(D=[''], T=[''], f=[])
-    parameter_s = parameter_s.replace('"',r'\"').replace("'",r"\'")
+    parameter_s = parameter_s.replace('"', r'\"').replace("'", r"\'")
     opts, arg_str = self.parse_options(parameter_s, 'rf:D:T:', list_all=True)
     opts.merge(opts_def)
 
@@ -255,21 +298,28 @@ def magic_lprun(self, parameter_s=''):
     for name in opts.f:
         try:
             funcs.append(eval(name, global_ns, local_ns))
-        except Exception, e:
-            raise UsageError('Could not find function %r.\n%s: %s' % (name, 
+        except Exception:
+            # "except Exception as e" is not supported in Python 2.5
+            # so we're using a hack to get the exception
+            e = sys.exc_info()[1]
+            raise UsageError('Could not find function %r.\n%s: %s' % (name,
                 e.__class__.__name__, e))
 
     profile = LineProfiler(*funcs)
 
     # Add the profiler to the builtins for @profile.
-    import __builtin__
-    if 'profile' in __builtin__.__dict__:
+    if PY3:
+        import builtins
+    else:
+        import __builtin__ as builtins
+
+    if 'profile' in builtins.__dict__:
         had_profile = True
-        old_profile = __builtin__.__dict__['profile']
+        old_profile = builtins.__dict__['profile']
     else:
         had_profile = False
         old_profile = None
-    __builtin__.__dict__['profile'] = profile
+    builtins.__dict__['profile'] = profile
 
     try:
         try:
@@ -282,7 +332,7 @@ def magic_lprun(self, parameter_s=''):
                 "profiled.")
     finally:
         if had_profile:
-            __builtin__.__dict__['profile'] = old_profile
+            builtins.__dict__['profile'] = old_profile
 
     # Trap text output.
     stdout_trap = StringIO()
@@ -294,24 +344,24 @@ def magic_lprun(self, parameter_s=''):
         page(output, screen_lines=self.shell.rc.screen_length)
     else:
         page(output)
-    print message,
+    print(message)
 
     dump_file = opts.D[0]
     if dump_file:
         profile.dump_stats(dump_file)
-        print '\n*** Profile stats pickled to file',\
-              `dump_file`+'.',message
+        print('\n*** Profile stats pickled to file %r. %s' % (
+            dump_file, message))
 
     text_file = opts.T[0]
     if text_file:
         pfile = open(text_file, 'w')
         pfile.write(output)
         pfile.close()
-        print '\n*** Profile printout saved to text file',\
-              `text_file`+'.',message
+        print('\n*** Profile printout saved to text file %r. %s' % (
+            text_file, message))
 
     return_value = None
-    if opts.has_key('r'):
+    if 'r' in opts:
         return_value = profile
 
     return return_value
@@ -327,12 +377,8 @@ def load_stats(filename):
     """ Utility function to load a pickled LineStats object from a given
     filename.
     """
-    f = open(filename, 'rb')
-    try:
-        lstats = cPickle.load(f)
-    finally:
-        f.close()
-    return lstats
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
 
 
 def main():
