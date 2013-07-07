@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 
 import cPickle
 from cStringIO import StringIO
@@ -106,11 +106,11 @@ class LineProfiler(CLineProfiler):
         finally:
             f.close()
 
-    def print_stats(self, stream=None):
+    def print_stats(self, stream=None, shell=None):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream)
+        show_text(lstats.timings, lstats.unit, stream=stream, shell=shell)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -139,7 +139,8 @@ class LineProfiler(CLineProfiler):
             self.disable_by_count()
 
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
+def show_func(filename, start_lineno, func_name, timings, unit, stream=None, 
+              shell=None):
     """ Show results for a single function.
     """
     if stream is None:
@@ -154,7 +155,13 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
         total_time += time
         linenos.append(lineno)
     print >>stream, "Total time: %g s" % (total_time * unit)
-    if not os.path.exists(filename):
+    if os.path.exists(filename):
+        all_lines = linecache.getlines(filename)
+        sublines = inspect.getblock(all_lines[start_lineno-1:])
+    elif filename.startswith("<ipython-input-") and shell is not None:
+        all_lines = shell.extract_input_lines(filename.split('-')[2]).splitlines()
+        sublines = all_lines[start_lineno-1:]
+    else:
         print >>stream, ""
         print >>stream, "Could not find file %s" % filename
         print >>stream, "Are you sure you are running this program from the same directory"
@@ -163,11 +170,6 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
         # Fake empty lines so we can see the timings, if not the code.
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
-    else:
-        # Clear the cache to ensure that we get up-to-date results.
-        linecache.clearcache()
-        all_lines = linecache.getlines(filename)
-        sublines = inspect.getblock(all_lines[start_lineno-1:])
     for lineno, nhits, time in timings:
         d[lineno] = (nhits, time, '%5.1f' % (float(time) / nhits),
             '%5.1f' % (100*time / total_time))
@@ -184,7 +186,7 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
             line.rstrip('\n').rstrip('\r'))
     print >>stream, ""
 
-def show_text(stats, unit, stream=None):
+def show_text(stats, unit, stream=None, shell=None):
     """ Show text for the given timings.
     """
     if stream is None:
@@ -192,7 +194,8 @@ def show_text(stats, unit, stream=None):
     print >>stream, 'Timer unit: %g s' % unit
     print >>stream, ''
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit, 
+                  stream=stream, shell=shell)
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
@@ -286,7 +289,7 @@ def magic_lprun(self, parameter_s=''):
 
     # Trap text output.
     stdout_trap = StringIO()
-    profile.print_stats(stdout_trap)
+    profile.print_stats(stdout_trap, shell=self.shell)
     output = stdout_trap.getvalue()
     output = output.rstrip()
 
