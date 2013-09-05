@@ -106,11 +106,11 @@ class LineProfiler(CLineProfiler):
         finally:
             f.close()
 
-    def print_stats(self, stream=None, shell=None):
+    def print_stats(self, stream=None):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream, shell=shell)
+        show_text(lstats.timings, lstats.unit, stream=stream)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -139,8 +139,7 @@ class LineProfiler(CLineProfiler):
             self.disable_by_count()
 
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None, 
-              shell=None):
+def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     """ Show results for a single function.
     """
     if stream is None:
@@ -155,12 +154,9 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None,
         total_time += time
         linenos.append(lineno)
     print >>stream, "Total time: %g s" % (total_time * unit)
-    if os.path.exists(filename):
+    if os.path.exists(filename) or filename.startswith("<ipython-input-"):
         all_lines = linecache.getlines(filename)
         sublines = inspect.getblock(all_lines[start_lineno-1:])
-    elif filename.startswith("<ipython-input-") and shell is not None:
-        all_lines = shell.extract_input_lines(filename.split('-')[2]).splitlines()
-        sublines = all_lines[start_lineno-1:]
     else:
         print >>stream, ""
         print >>stream, "Could not find file %s" % filename
@@ -186,7 +182,7 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None,
             line.rstrip('\n').rstrip('\r'))
     print >>stream, ""
 
-def show_text(stats, unit, stream=None, shell=None):
+def show_text(stats, unit, stream=None):
     """ Show text for the given timings.
     """
     if stream is None:
@@ -194,8 +190,8 @@ def show_text(stats, unit, stream=None, shell=None):
     print >>stream, 'Timer unit: %g s' % unit
     print >>stream, ''
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, 
-                  stream=stream, shell=shell)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit,
+                  stream=stream)
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
@@ -289,7 +285,7 @@ def magic_lprun(self, parameter_s=''):
 
     # Trap text output.
     stdout_trap = StringIO()
-    profile.print_stats(stdout_trap, shell=self.shell)
+    profile.print_stats(stdout_trap)
     output = stdout_trap.getvalue()
     output = output.rstrip()
 
