@@ -155,6 +155,9 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
         linenos.append(lineno)
     print >>stream, "Total time: %g s" % (total_time * unit)
     if os.path.exists(filename) or filename.startswith("<ipython-input-"):
+        if os.path.exists(filename):
+            # Clear the cache to ensure that we get up-to-date results.
+            linecache.clearcache()
         all_lines = linecache.getlines(filename)
         sublines = inspect.getblock(all_lines[start_lineno-1:])
     else:
@@ -190,8 +193,7 @@ def show_text(stats, unit, stream=None):
     print >>stream, 'Timer unit: %g s' % unit
     print >>stream, ''
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit,
-                  stream=stream)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream)
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
