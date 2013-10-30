@@ -16,7 +16,7 @@ CO_GENERATOR = 0x0020
 def is_generator(f):
     """ Return True if a function is a generator.
     """
-    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0 
+    isgen = (f.func_code.co_flags & CO_GENERATOR) != 0
     return isgen
 
 # Code to exec inside of LineProfiler.__call__ to support PEP-342-style
@@ -106,11 +106,12 @@ class LineProfiler(CLineProfiler):
         finally:
             f.close()
 
-    def print_stats(self, stream=None):
+    def print_stats(self, stream=None, stripzeros=False):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream)
+
+        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -138,14 +139,30 @@ class LineProfiler(CLineProfiler):
         finally:
             self.disable_by_count()
 
+    def add_module(self, mod):
+        """ Add all the functions in a module and its classes.
+        """
+        from inspect import isclass, isfunction
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
+        nfuncsadded = 0
+        for item in mod.__dict__.values():
+            if isclass(item):
+                for k, v in item.__dict__.items():
+                    if isfunction(v):
+                        self.add_function(v)
+                        nfuncsadded += 1
+            elif isfunction(item):
+                self.add_function(item)
+                nfuncsadded += 1
+
+        return nfuncsadded
+
+
+def show_func(filename, start_lineno, func_name, timings, unit, stream=None, stripzeros=False):
     """ Show results for a single function.
     """
     if stream is None:
         stream = sys.stdout
-    print >>stream, "File: %s" % filename
-    print >>stream, "Function: %s at line %s" % (func_name, start_lineno)
     template = '%6s %9s %12s %8s %8s  %-s'
     d = {}
     total_time = 0.0
@@ -153,6 +170,13 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
     for lineno, nhits, time in timings:
         total_time += time
         linenos.append(lineno)
+
+    if stripzeros and total_time == 0:
+        return
+
+    print >>stream, "File: %s" % filename
+    print >>stream, "Function: %s at line %s" % (func_name, start_lineno)
+
     print >>stream, "Total time: %g s" % (total_time * unit)
     if not os.path.exists(filename):
         print >>stream, ""
@@ -173,7 +197,7 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
             '%5.1f' % (100*time / total_time))
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
-    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time', 
+    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
         'Line Contents')
     print >>stream, ""
     print >>stream, header
@@ -184,7 +208,7 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None):
             line.rstrip('\n').rstrip('\r'))
     print >>stream, ""
 
-def show_text(stats, unit, stream=None):
+def show_text(stats, unit, stream=None, stripzeros=False):
     """ Show text for the given timings.
     """
     if stream is None:
@@ -192,7 +216,7 @@ def show_text(stats, unit, stream=None):
     print >>stream, 'Timer unit: %g s' % unit
     print >>stream, ''
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
@@ -208,7 +232,7 @@ def magic_lprun(self, parameter_s=''):
     pager once the statement has completed.
 
     Options:
-    
+
     -f <function>: LineProfiler only profiles functions and methods it is told
     to profile.  This option tells the profiler about these functions. Multiple
     -f options may be used. The argument may be any expression that gives
@@ -217,7 +241,9 @@ def magic_lprun(self, parameter_s=''):
     in the interpreter at the In[] prompt or via %run currently cannot be
     displayed.  Write these functions out to a separate file and import them.
 
-    One or more -f options are required to get any useful results.
+    -m <module>: Get all the functions/methods in a module
+
+    One or more -f or -m options are required to get any useful results.
 
     -D <filename>: dump the raw statistics out to a pickle file on disk. The
     usual extension for this is ".lprof". These statistics may be viewed later
@@ -227,6 +253,8 @@ def magic_lprun(self, parameter_s=''):
     out to a text file.
 
     -r: return the LineProfiler object after it has completed profiling.
+
+    -s: strip out all entries from the print-out that have zeros.
     """
     # Local imports to avoid hard dependency.
     from distutils.version import LooseVersion
@@ -242,9 +270,9 @@ def magic_lprun(self, parameter_s=''):
         from IPython.core.error import UsageError
 
     # Escape quote markers.
-    opts_def = Struct(D=[''], T=[''], f=[])
+    opts_def = Struct(D=[''], T=[''], f=[], m=[])
     parameter_s = parameter_s.replace('"',r'\"').replace("'",r"\'")
-    opts, arg_str = self.parse_options(parameter_s, 'rf:D:T:', list_all=True)
+    opts, arg_str = self.parse_options(parameter_s, 'rsf:m:D:T:', list_all=True)
     opts.merge(opts_def)
 
     global_ns = self.shell.user_global_ns
@@ -256,10 +284,19 @@ def magic_lprun(self, parameter_s=''):
         try:
             funcs.append(eval(name, global_ns, local_ns))
         except Exception, e:
-            raise UsageError('Could not find function %r.\n%s: %s' % (name, 
+            raise UsageError('Could not find function %r.\n%s: %s' % (name,
                 e.__class__.__name__, e))
 
     profile = LineProfiler(*funcs)
+
+    #get the modules, too
+    for modname in opts.m:
+        try:
+            mod = __import__(modname, fromlist=[''])
+            profile.add_module(mod)
+        except Exception, e:
+            raise UsageError('Could not find module %r.\n%s: %s' % (name,
+                e.__class__.__name__, e))
 
     # Add the profiler to the builtins for @profile.
     import __builtin__
@@ -286,7 +323,7 @@ def magic_lprun(self, parameter_s=''):
 
     # Trap text output.
     stdout_trap = StringIO()
-    profile.print_stats(stdout_trap)
+    profile.print_stats(stdout_trap, stripzeros=opts.has_key('s'))
     output = stdout_trap.getvalue()
     output = output.rstrip()
 
