@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+from __future__ import print_function
 try:
     import cPickle as pickle
 except ImportError:
@@ -307,7 +308,7 @@ def magic_lprun(self, parameter_s=''):
         page(output, screen_lines=self.shell.rc.screen_length)
     else:
         page(output)
-    print(message)
+    print(message, end="")
 
     dump_file = opts.D[0]
     if dump_file:
