@@ -10,6 +10,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
+import functools
 import inspect
 import linecache
 import optparse
@@ -60,19 +61,16 @@ class LineProfiler(CLineProfiler):
         """
         self.add_function(func)
         if is_generator(func):
-            f = self.wrap_generator(func)
+            wrapper = self.wrap_generator(func)
         else:
-            f = self.wrap_function(func)
-        f.__module__ = func.__module__
-        f.__name__ = func.__name__
-        f.__doc__ = func.__doc__
-        f.__dict__.update(getattr(func, '__dict__', {}))
-        return f
+            wrapper = self.wrap_function(func)
+        return wrapper
 
     def wrap_generator(self, func):
         """ Wrap a generator to profile it.
         """
-        def f(*args, **kwds):
+        @functools.wraps(func)
+        def wrapper(*args, **kwds):
             g = func(*args, **kwds)
             # The first iterate will not be a .send()
             self.enable_by_count()
@@ -89,19 +87,20 @@ class LineProfiler(CLineProfiler):
                 finally:
                     self.disable_by_count()
                 input = (yield item)
-        return f
+        return wrapper
 
     def wrap_function(self, func):
         """ Wrap a function to profile it.
         """
-        def f(*args, **kwds):
+        @functools.wraps(func)
+        def wrapper(*args, **kwds):
             self.enable_by_count()
             try:
                 result = func(*args, **kwds)
             finally:
                 self.disable_by_count()
             return result
-        return f
+        return wrapper
 
     def dump_stats(self, filename):
         """ Dump a representation of the data to a file as a pickled LineStats
