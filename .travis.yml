@@ -1,15 +1,17 @@
 language: python
 python:
-  - 3.4
-  - 3.3
-  - 3.2
-  - 2.7
-  - 2.6
+  - "3.4"
+  - "3.3"
+  - "3.2"
+  - "2.7"
+  - "2.6"
 install:
+  - if ! [[ $TRAVIS_PYTHON_VERSION > '2.6' ]]; then pip install unittest2 ; fi
   - pip install -r dev_requirements.txt
   - python setup.py develop
 script:
-  - python -m unittest discover tests
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then python -m unittest2.__main__ discover -v tests ; fi
+  - if [[ $TRAVIS_PYTHON_VERSION != '2.6' ]]; then python -m unittest discover -v tests ; fi
 notifications:
   email:
       - robert.kern+travis-ci@gmail.com
