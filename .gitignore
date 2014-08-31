@@ -1,11 +1,14 @@
-syntax: glob
-.gdb_history
-*.pyc
-*.pyo
-*.pyclbr
-*.so
+# Swap files.
 .*.swp
 .*.swo
+*~
+
+*.pyc
+*.pyo
+*.so
+*.o
+*.a
+
 build/
 dist/
 _line_profiler.c
