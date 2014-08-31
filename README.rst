@@ -47,7 +47,7 @@ trying to build any C extensions.
 line_profiler
 =============
 
-The current profiling tools supported in Python 2.5 and later only time
+The current profiling tools supported in Python 2.7 and later only time
 function calls. This is a good first step for locating hotspots in one's program
 and is frequently all one needs to do to optimize the program. However,
 sometimes the cause of the hotspot is actually a single line in the function,
@@ -211,8 +211,7 @@ features:
       Profiler will be instantiated and inserted into your __builtins__ with the
       name "profile". Like LineProfiler, it may be used as a decorator, or
       enabled/disabled with `enable_by_count()` and `disable_by_count()`, or
-      even as a context manager with the "with profile:" statement in Python 2.5
-      and 2.6.
+      even as a context manager with the "with profile:" statement.
 
     * Pre-profiling setup. With the [-s/--setup] option, you can provide
       a script which will be executed without profiling before executing the
@@ -329,14 +328,8 @@ Frequently Asked Questions
 
 * What version of Python do I need?
 
-    Both line_profiler and kernprof have been tested with Python 2.4-2.7.
-    It might work with Python 2.3, but does not currently work with Python 3.x.
-
-* I get negative line timings! What's going on?
-
-    There was a bug in 1.0b1 on Windows that resulted in this. It should be
-    fixed in 1.0b2. If you are still seeing negative numbers, please let me
-    know.
+    Both `line_profiler` and `kernprof` have been tested with Python 2.7, and
+    3.2-3.4.
 
 
 To Do
@@ -367,6 +360,7 @@ Changes
 * ENH: `kernprof.py` is now installed as `kernprof`.
 * ENH: Python 3 support. Thanks to the long-suffering Mikhail Korobov for being
   patient.
+* Dropped 2.6 as it was too annoying.
 * ENH: The `stripzeros` and `add_module` options. Thanks to Erik Tollerud for
   contributing it.
 * ENH: Support for IPython cell blocks. Thanks to Michael Forbes for adding

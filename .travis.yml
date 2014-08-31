@@ -4,14 +4,11 @@ python:
   - "3.3"
   - "3.2"
   - "2.7"
-  - "2.6"
 install:
-  - if ! [[ $TRAVIS_PYTHON_VERSION > '2.6' ]]; then pip install unittest2 ; fi
   - pip install --install-option='--no-cython-compile' -r dev_requirements.txt
   - python setup.py develop
 script:
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then python -m unittest2.__main__ discover -v tests ; fi
-  - if [[ $TRAVIS_PYTHON_VERSION != '2.6' ]]; then python -m unittest discover -v tests ; fi
+  - python -m unittest discover -v tests
 notifications:
   email:
       - robert.kern+travis-ci@gmail.com
