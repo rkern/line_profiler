@@ -34,7 +34,7 @@ In addition, git checkouts will also require Cython_ >= 0.10. Source releases
 on PyPI should contain the pregenerated C sources, so Cython should not be
 required in that case.
 
-`kernprof.py` is a single-file pure Python script and does not require
+`kernprof` is a single-file pure Python script and does not require
 a compiler.  If you wish to use it to run cProfile and not line-by-line
 profiling, you may copy it to a directory on your `PATH` manually and avoid
 trying to build any C extensions.
@@ -364,6 +364,7 @@ Changes
 
 1.0
 ~~~
+* ENH: `kernprof.py` is now installed as `kernprof`.
 * ENH: Python 3 support. Thanks to the long-suffering Mikhail Korobov for being
   patient.
 * ENH: The `stripzeros` and `add_module` options. Thanks to Erik Tollerud for
