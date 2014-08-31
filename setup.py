@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-import os.path
+import os
+
+# Monkeypatch distutils.
+import setuptools
 
 import distutils.errors
 from distutils.core import setup
@@ -15,10 +17,11 @@ except ImportError:
     line_profiler_source = '_line_profiler.c'
     if not os.path.exists(line_profiler_source):
         raise distutils.errors.DistutilsError("""\
-You need cython to build the line_profiler from a mercurial checkout, or
-alternatively use a release tarball from PyPI to build it without cython.""")
+You need Cython to build the line_profiler from a git checkout, or
+alternatively use a release tarball from PyPI to build it without Cython.""")
     else:
-        warn("Could not import Cython. Using pre-generated C file if available.")
+        warn("Could not import Cython. "
+             "Using the available pre-generated C file.")
 
 long_description = """\
 line_profiler will profile the time individual lines of code take to execute.
@@ -32,12 +35,12 @@ function-level profiling tools in the Python standard library.
 
 setup(
     name = 'line_profiler',
-    version = '1.0b3',
+    version = '1.0',
     author = 'Robert Kern',
     author_email = 'robert.kern@enthought.com',
     description = 'Line-by-line profiler.',
     long_description = long_description,
-    url = 'http://packages.python.org/line_profiler',
+    url = 'https://github.com/rkern/line_profiler',
     ext_modules = [
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
@@ -46,23 +49,26 @@ setup(
     ],
     license = "BSD",
     classifiers = [
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Programming Language :: C",
         "Programming Language :: Python",
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: Implementation :: CPython',
         "Topic :: Software Development",
     ],
-    py_modules = ['line_profiler'],
-    scripts = ['kernprof.py'],
+    py_modules = ['line_profiler', 'kernprof'],
+    entry_points = {
+        'console_scripts': [
+            'kernprof=kernprof:main',
+        ],
+    },
     cmdclass = cmdclass,
 )
-

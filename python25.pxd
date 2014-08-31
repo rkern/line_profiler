@@ -399,8 +399,12 @@ cdef extern from "Python.h":
     ctypedef struct PyThreadState:
         PyFrameObject * frame
         int recursion_depth
-        void * curexc_type, * curexc_value, * curexc_traceback
-        void * exc_type, * exc_value, * exc_traceback
+        void * curexc_type
+        void * curexc_value
+        void * curexc_traceback
+        void * exc_type
+        void * exc_value
+        void * exc_traceback
 
     void                PyEval_AcquireLock              ()
     void                PyEval_ReleaseLock              ()

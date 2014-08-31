@@ -3,6 +3,7 @@
 """ Script to conveniently run profilers on code in a variety of circumstances.
 """
 
+import functools
 import optparse
 import os
 import sys
@@ -75,21 +76,18 @@ class ContextualProfile(Profile):
         # FIXME: refactor this into a utility function so that both it and
         # line_profiler can use it.
         if is_generator(func):
-            f = self.wrap_generator(func)
+            wrapper = self.wrap_generator(func)
         else:
-            f = self.wrap_function(func)
-        f.__module__ = func.__module__
-        f.__name__ = func.__name__
-        f.__doc__ = func.__doc__
-        f.__dict__.update(getattr(func, '__dict__', {}))
-        return f
+            wrapper = self.wrap_function(func)
+        return wrapper
 
     # FIXME: refactor this stuff so that both LineProfiler and
     # ContextualProfile can use the same implementation.
     def wrap_generator(self, func):
         """ Wrap a generator to profile it.
         """
-        def f(*args, **kwds):
+        @functools.wraps(func)
+        def wrapper(*args, **kwds):
             g = func(*args, **kwds)
             # The first iterate will not be a .send()
             self.enable_by_count()
@@ -106,19 +104,20 @@ class ContextualProfile(Profile):
                 finally:
                     self.disable_by_count()
                 input = (yield item)
-        return f
+        return wrapper
 
     def wrap_function(self, func):
         """ Wrap a function to profile it.
         """
-        def f(*args, **kwds):
+        @functools.wraps(func)
+        def wrapper(*args, **kwds):
             self.enable_by_count()
             try:
                 result = func(*args, **kwds)
             finally:
                 self.disable_by_count()
             return result
-        return f
+        return wrapper
 
     def __enter__(self):
         self.enable_by_count()
@@ -146,7 +145,9 @@ def find_script(script_name):
     raise SystemExit(1)
 
 
-def main(args):
+def main(args=None):
+    if args is None:
+        args = sys.argv
     usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
     parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
     parser.allow_interspersed_args = False
@@ -230,4 +231,3 @@ def main(args):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-
