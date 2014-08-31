@@ -146,7 +146,9 @@ def find_script(script_name):
     raise SystemExit(1)
 
 
-def main(args):
+def main(args=None):
+    if args is None:
+        args = sys.argv
     usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
     parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
     parser.allow_interspersed_args = False
@@ -230,4 +232,3 @@ def main(args):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-

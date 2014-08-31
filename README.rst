@@ -1,13 +1,13 @@
 line_profiler and kernprof
 --------------------------
 
-line_profiler is a module for doing line-by-line profiling of functions.
-kernprof is a convenient script for running either line_profiler or the Python
+`line_profiler` is a module for doing line-by-line profiling of functions.
+kernprof is a convenient script for running either `line_profiler` or the Python
 standard library's cProfile or profile modules, depending on what is available.
 
 They are available under a `BSD license`_.
 
-.. _BSD license: http://packages.python.org/line_profiler/LICENSE.txt
+.. _BSD license: https://raw.githubusercontent.com/rkern/line_profiler/master/LICENSE.txt
 
 .. contents::
 
@@ -15,36 +15,31 @@ They are available under a `BSD license`_.
 Installation
 ============
 
+Releases of `line_profiler` can be installed using pip_::
+
+    $ pip install line_profiler
+
 Source releases and any binaries can be downloaded from the PyPI link.
 
     http://pypi.python.org/pypi/line_profiler
 
-The current release of the kernprof.py script may be downloaded separately here:
+To check out the development sources, you can use Git_::
 
-    http://packages.python.org/line_profiler/kernprof.py
-
-To check out the development sources, you can use Mercurial_::
-
-    $ hg clone https://bitbucket.org/robertkern/line_profiler
+    $ git clone https://github.com/rkern/line_profiler.git
 
 You may also download source tarballs of any snapshot from that URL.
 
-Source releases will require a C compiler in order to build line_profiler. In
-addition, Mercurial checkouts will also require Cython_ >= 0.10. Source releases
+Source releases will require a C compiler in order to build `line_profiler`.
+In addition, git checkouts will also require Cython_ >= 0.10. Source releases
 on PyPI should contain the pregenerated C sources, so Cython should not be
 required in that case.
 
-kernprof.py is a single-file pure Python script and does not require a compiler.
-If you wish to use it to run cProfile and not line-by-line profiling, you may
-copy it to a directory on your PATH manually and avoid trying to build any
-C extensions.
+`kernprof.py` is a single-file pure Python script and does not require
+a compiler.  If you wish to use it to run cProfile and not line-by-line
+profiling, you may copy it to a directory on your `PATH` manually and avoid
+trying to build any C extensions.
 
-In order to build and install line_profiler, you will simply use the standard
-`build and install`_ for most Python packages::
-
-    $ python setup.py install
-
-.. _Mercurial: http://www.selenic.com/mercurial/wiki/
+.. _git: http://git-scm.com/
 .. _Cython: http://www.cython.org
 .. _build and install: http://docs.python.org/install/index.html
 
@@ -75,19 +70,21 @@ of each individual line inside those functions. In a typical workflow, one only
 cares about line timings of a few functions because wading through the results
 of timing every single line of code would be overwhelming. However, LineProfiler
 does need to be explicitly told what functions to profile. The easiest way to
-get started is to use the kernprof.py script.
+get started is to use the `kernprof` script. ::
 
-If you use "kernprof.py [-l/--line-by-line] script_to_profile.py", an instance
-of LineProfiler will be created and inserted into the __builtins__ namespace
-with the name "profile". It has been written to be used as a decorator, so in
-your script, you can decorate any function you want to profile with @profile. ::
+    $ kernprof -l script_to_profile.py
+
+`kernprof` will create an instance of LineProfiler and insert it into the
+`__builtins__` namespace with the name `profile`. It has been written to be
+used as a decorator, so in your script, you can decorate any function you want
+to profile with @profile. ::
 
     @profile
     def slow_function(a, b, c):
         ...
 
-The default behavior of kernprof is to put the results into a binary file
-script_to_profile.py.lprof . You can tell kernprof to immediately view the
+The default behavior of `kernprof` is to put the results into a binary file
+script_to_profile.py.lprof . You can tell `kernprof` to immediately view the
 formatted results at the terminal with the [-v/--view] option. Otherwise, you
 can view the results later like so::
 
@@ -95,7 +92,7 @@ can view the results later like so::
 
 For example, here are the results of profiling a single function from
 a decorated version of the pystone.py benchmark (the first two lines are output
-from pystone.py, not kernprof)::
+from `pystone.py`, not `kernprof`)::
 
     Pystone(1.1) time for 50000 passes = 2.48
     This machine benchmarks at 20161.3 pystones/second
@@ -148,21 +145,11 @@ line. There are six columns of information.
 If you are using IPython, there is an implementation of an %lprun magic command
 which will let you specify functions to profile and a statement to execute. It
 will also add its LineProfiler instance into the __builtins__, but typically,
-you would not use it like that. For IPython 0.10, you can install it by editing
-the IPython configuration file ~/.ipython/ipy_user_conf.py to add the following
-lines::
-
-    # These two lines are standard and probably already there.
-    import IPython.ipapi
-    ip = IPython.ipapi.get()
-
-    # These two are the important ones.
-    import line_profiler
-    ip.expose_magic('lprun', line_profiler.magic_lprun)
+you would not use it like that.
 
 For IPython 0.11+, you can install it by editing the IPython configuration file
-~/.ipython/profile_default/ipython_config.py to add the `'line_profiler'` item
-to the extensions list::
+`~/.ipython/profile_default/ipython_config.py` to add the `'line_profiler'`
+item to the extensions list::
 
     c.TerminalIPythonApp.extensions = [
         'line_profiler',
@@ -200,7 +187,7 @@ the timer unit.
 kernprof
 ========
 
-kernprof also works with cProfile, its third-party incarnation lsprof, or the
+`kernprof` also works with cProfile, its third-party incarnation lsprof, or the
 pure-Python profile module depending on what is available. It has a few main
 features:
 
@@ -324,19 +311,19 @@ Frequently Asked Questions
     projects for modules as small as these. However, kernprof.py is
     a standalone, pure Python script that can be used to do function profiling
     with just the Python standard library. You may grab it and install it by
-    itself without line_profiler.
+    itself without `line_profiler`.
 
-* Do I need a C compiler to build line_profiler? kernprof.py?
+* Do I need a C compiler to build `line_profiler`? kernprof.py?
 
     You do need a C compiler for line_profiler. kernprof.py is a pure Python
     script and can be installed separately, though.
 
-* Do I need Cython to build line_profiler?
+* Do I need Cython to build `line_profiler`?
 
     You should not have to if you are building from a released source tarball.
     It should contain the generated C sources already. If you are running into
     problems, that may be a bug; let me know. If you are building from
-    a Mercurial checkout or snapshot, you will need Cython to generate the
+    a git checkout or snapshot, you will need Cython to generate the
     C sources. You will probably need version 0.10 or higher. There is a bug in
     some earlier versions in how it handles NULL PyObject* pointers.
 
@@ -367,15 +354,24 @@ now. Maybe later. Contributions accepted!
 Bugs and Such
 =============
 
-If you find a bug, or a missing feature you really want added, please post to
-the enthought-dev_ mailing list or email the author at
-<robert.kern@enthought.com>.
+Bugs and pull requested can be submitted on GitHub_.
 
-.. _enthought-dev : https://mail.enthought.com/mailman/listinfo/enthought-dev
+.. _GitHub: https://github.com/rkern/line_profiler
 
 
 Changes
 =======
+
+1.0
+~~~
+* ENH: Python 3 support. Thanks to the long-suffering Mikhail Korobov for being
+  patient.
+* ENH: The `stripzeros` and `add_module` options. Thanks to Erik Tollerud for
+  contributing it.
+* ENH: Support for IPython cell blocks. Thanks to Michael Forbes for adding
+  this feature.
+* ENH: Better warnings when building without Cython. Thanks to David Cournapeau
+  for spotting this.
 
 1.0b3
 ~~~~~
@@ -396,4 +392,3 @@ Changes
 ~~~~~
 
 * Initial release.
-
