@@ -199,7 +199,6 @@ def main(args=None):
             import __builtin__ as builtins
         builtins.__dict__['profile'] = prof
 
-    print(options.script_file)
     script_file = find_script(options.script_file)
     __file__ = script_file
     __name__ = '__main__'
