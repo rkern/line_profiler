@@ -1,5 +1,6 @@
 from python25 cimport PyFrameObject, PyObject, PyStringObject
 
+import threading
 
 cdef extern from "frameobject.h":
     ctypedef int (*Py_tracefunc)(object self, PyFrameObject *py_frame, int what, PyObject *arg)
@@ -108,14 +109,14 @@ cdef class LineProfiler:
     cdef public dict code_map
     cdef public dict last_time
     cdef public double timer_unit
-    cdef public long enable_count
+    cdef public object threaddata
 
     def __init__(self, *functions):
         self.functions = []
         self.code_map = {}
         self.last_time = {}
         self.timer_unit = hpTimerUnit()
-        self.enable_count = 0
+        self.threaddata = threading.local()
         for func in functions:
             self.add_function(func)
 
@@ -135,17 +136,19 @@ cdef class LineProfiler:
     def enable_by_count(self):
         """ Enable the profiler if it hasn't been enabled before.
         """
-        if self.enable_count == 0:
+        if not hasattr(self.threaddata, 'enable_count'):                       
+            self.threaddata.enable_count = 0                                   
+        if self.threaddata.enable_count == 0:
             self.enable()
-        self.enable_count += 1
+        self.threaddata.enable_count += 1
 
     def disable_by_count(self):
         """ Disable the profiler if the number of disable requests matches the
         number of enable requests.
         """
-        if self.enable_count > 0:
-            self.enable_count -= 1
-            if self.enable_count == 0:
+        if self.threaddata.enable_count > 0:
+            self.threaddata.enable_count -= 1
+            if self.threaddata.enable_count == 0:
                 self.disable()
 
     def __enter__(self):
