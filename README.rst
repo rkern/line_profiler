@@ -76,7 +76,7 @@ get started is to use the `kernprof` script. ::
 
 `kernprof` will create an instance of LineProfiler and insert it into the
 `__builtins__` namespace with the name `profile`. It has been written to be
-used as a decorator, so in your script, you can decorate any function you want
+used as a decorator, so in your script, you decorate the functions you want
 to profile with @profile. ::
 
     @profile
