@@ -8,6 +8,7 @@ import optparse
 import os
 import sys
 
+PY3 = sys.version_info[0] == 3
 
 # Guard the import of cProfile such that 3.x people
 # without lsprof can still use this script.
@@ -200,9 +201,9 @@ def main(args=None):
     else:
         prof = ContextualProfile()
     if options.builtin:
-        try:
+        if PY3:
             import builtins
-        except ImportError: # Python 2.x
+        else:
             import __builtin__ as builtins
         builtins.__dict__['profile'] = prof
 
