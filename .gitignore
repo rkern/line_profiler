@@ -3,6 +3,9 @@
 .*.swo
 *~
 
+#PyCharm
+*.idea
+
 *.pyc
 *.pyo
 *.so
