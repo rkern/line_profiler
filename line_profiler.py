@@ -44,6 +44,8 @@ else:
 # ============================================================
 
 CO_GENERATOR = 0x0020
+
+
 def is_generator(f):
     """ Return True if a function is a generator.
     """
@@ -110,11 +112,17 @@ class LineProfiler(CLineProfiler):
         with open(filename, 'wb') as f:
             pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
 
-    def print_stats(self, stream=None, stripzeros=False):
+    def print_stats(self, stream=None, stripzeros=False, sort_by_total_time=False):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros)
+        show_text(
+            lstats.timings,
+            lstats.unit,
+            stream=stream,
+            stripzeros=stripzeros,
+            sort_by_total_time=sort_by_total_time
+        )
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -216,15 +224,21 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
         stream.write("\n")
     stream.write("\n")
 
-def show_text(stats, unit, stream=None, stripzeros=False):
+
+def show_text(stats, unit, stream=None, stripzeros=False, sort_by_total_time=False):
     """ Show text for the given timings.
     """
     if stream is None:
         stream = sys.stdout
 
     stream.write('Timer unit: %g s\n\n' % unit)
-    for (fn, lineno, name), timings in sorted(stats.items()):
+    if sort_by_total_time:
+        stats_to_print = sorted(stats.items(), key=lambda x: sum([v[2] for v in x[1]]))
+    else:
+        stats_to_print = sorted(stats.items())
+    for (fn, lineno, name), timings in stats_to_print:
         show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
+
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
