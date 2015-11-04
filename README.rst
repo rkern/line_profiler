@@ -355,6 +355,10 @@ Bugs and pull requested can be submitted on GitHub_.
 Changes
 =======
 
+1.1
+~~~
+* BUG: Read source files as bytes.
+
 1.0
 ~~~
 * ENH: `kernprof.py` is now installed as `kernprof`.

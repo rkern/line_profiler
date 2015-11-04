@@ -31,7 +31,7 @@ except NameError:
     exec_ = getattr(builtins, "exec")
 
     def execfile(filename, globals=None, locals=None):
-        with open(filename) as f:
+        with open(filename, 'rb') as f:
             exec_(compile(f.read(), filename, 'exec'), globals, locals)
 # =====================================
 
