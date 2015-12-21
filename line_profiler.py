@@ -303,7 +303,7 @@ def magic_lprun(self, parameter_s=''):
             mod = __import__(modname, fromlist=[''])
             profile.add_module(mod)
         except Exception as e:
-            raise UsageError('Could not find module %r.\n%s: %s' % (name,
+            raise UsageError('Could not find module %r.\n%s: %s' % (modname,
                 e.__class__.__name__, e))
 
     # Add the profiler to the builtins for @profile.
