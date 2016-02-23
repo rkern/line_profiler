@@ -234,6 +234,21 @@ converter program pyprof2calltree_ or RunSnakeRun_.
 .. _pyprof2calltree: http://pypi.python.org/pypi/pyprof2calltree/
 .. _RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
 
+Running kernprof with pserve (Pyramid)
+======================================
+
+Pyramid_'s `pserve` requires somewhat peculiar approach to using it together with `kernprof`. 
+
+First, activate the virtualenv for your site. Then run command similar to following one::
+
+	$ kernprof -l -v /path/to/relevant/pserve development.ini
+
+
+Visit URL(s) of the site that trigger code decorated by `@profile`. To see profiling output, you have to abort the pserve process (press Ctrl-C), it's not displayed until you do that.
+
+Note: `kernprof` when running over `pserve` does not work with "--reload" option of `pserve`. When testing, you have to omit this flag.
+
+.. _Pyramid: http://www.pylonsproject.org/
 
 Frequently Asked Questions
 ==========================
