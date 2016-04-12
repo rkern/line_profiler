@@ -147,10 +147,8 @@ def find_script(script_name):
 
 
 def main():
-    from line_profiler import _version
-
+    import line_profiler
     parser = argparse.ArgumentParser(description='Profile python scripts')
-    parser.add_argument('--version', action='version', version='%%(prog)s %s' % _version)
     parser.add_argument('-l', '--line-by-line', action='store_true',
                         help="Use the line-by-line profiler from the line_profiler module "
                         "instead of Profile. Implies --builtin.")
@@ -166,6 +164,8 @@ def main():
                         help="Code to execute before the code to profile")
     parser.add_argument('-v', '--view', action='store_true',
                         help="View the results of the profile in addition to saving it.")
+
+    line_profiler.add_line_profile_options(parser)
     parser.add_argument('script', help='Script to profile')
     parser.add_argument('script_args', nargs=argparse.REMAINDER, metavar='')
 
@@ -228,7 +228,7 @@ def main():
         prof.dump_stats(args.outfile)
         print('Wrote profile results to %s' % args.outfile)
         if args.view:
-            prof.print_stats()
+            prof.print_stats(options=args)
 
 if __name__ == '__main__':
     sys.exit(main())

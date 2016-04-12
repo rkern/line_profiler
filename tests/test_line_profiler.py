@@ -71,7 +71,7 @@ class TestLineProfiler(unittest.TestCase):
         self.assertEqual(value, f(10))
 
         timings = profile.code_map[f.__code__]
-        self.assertEqual(len(timings), 2)
+        self.assertEqual(len(timings), 3)
         for timing in timings.values():
             self.assertEqual(timing.nhits, 1)
 

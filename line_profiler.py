@@ -13,13 +13,18 @@ except ImportError:
 import functools
 import inspect
 import linecache
+import locale
 import argparse
 import os
+import re
 import sys
 
 from _line_profiler import LineProfiler as CLineProfiler
 
 _version = "1.0b2"
+
+# For locale.format number grouping (option --grouped-numbers)
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 # Python 2/3 compatibility utils
 # ===========================================================
@@ -112,11 +117,11 @@ class LineProfiler(CLineProfiler):
         with open(filename, 'wb') as f:
             pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
 
-    def print_stats(self, stream=None, stripzeros=False):
+    def print_stats(self, stream=None, stripzeros=False, options=None):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros)
+        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros, options=options)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -162,15 +167,13 @@ class LineProfiler(CLineProfiler):
 
         return nfuncsadded
 
+empty = ('', '', 0, 0, '')
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None, stripzeros=False):
+def show_func(filename, start_lineno, func_name, timings, unit, stream=sys.stdout, stripzeros=False, options=None):
     """ Show results for a single function.
     """
-    if stream is None:
-        stream = sys.stdout
-
-    template = '%6s %9s %12s %8s %8s  %-s'
-    d = {}
+    do_block_sums = options and options.block_sum
+    line_stats = {}
     total_time = 0.0
     linenos = []
     for lineno, nhits, time in timings:
@@ -198,27 +201,170 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
         # Fake empty lines so we can see the timings, if not the code.
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
-    for lineno, nhits, time in timings:
-        d[lineno] = (nhits, time, '%5.1f' % (float(time) / nhits),
-            '%5.1f' % (100*time / total_time))
-    linenos = range(start_lineno, start_lineno + len(sublines))
-    empty = ('', '', '', '')
-    header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
-        'Line Contents')
-    stream.write("\n")
-    stream.write(header)
-    stream.write("\n")
-    stream.write('=' * len(header))
-    stream.write("\n")
-    for lineno, line in zip(linenos, sublines):
-        nhits, time, per_hit, percent = d.get(lineno, empty)
-        txt = template % (lineno, nhits, time, per_hit, percent,
-                          line.rstrip('\n').rstrip('\r'))
-        stream.write(txt)
-        stream.write("\n")
-    stream.write("\n")
 
-def show_text(stats, unit, stream=None, stripzeros=False):
+    max_line_len = 0
+    for l in sublines:
+        max_line_len = max(max_line_len, len(l.rstrip('\n').rstrip('\r')))
+    max_line_len += 2
+
+    template = '%(line)6s %(hits)9s %(time)12s %(per_hit)10s %(p_time)8s  %(line_contents)-s'
+    if do_block_sums:
+        template = '%%(line)6s %%(hits)9s %%(time)12s %%(per_hit)10s %%(p_time)8s %%(block_sum)11s  %%(block_sum_hit)-14s %%(line_contents)-%ss %%(comment)s' % max_line_len
+
+    header_keys = {"line": "Line #",
+                   "hits": "Hits",
+                   "time": "Time",
+                   "per_hit": "Per Hit",
+                   "p_time": "% Time",
+                   "block_sum": "Block Sum",
+                   "block_sum_hit": "Block Sum/Hit",
+                   "line_contents": "Line Contents",
+                   "comment": ""}
+
+    linenos = range(start_lineno, start_lineno + len(sublines))
+
+    for lineno, nhits, time in timings:
+        line_stats[lineno] = (nhits, time, (float(time) / nhits), ((100*time / total_time) if time else 0), [])
+
+    if do_block_sums:
+        calculate_block_sums(line_stats, linenos, sublines)
+
+    def grouped_number(val):
+        if val == '' or val == 0:
+            return ""
+        if type(val) == float:
+            return locale.format("%0.1f", val, grouping=True if options and options.grouped_numbers else False)
+        return locale.format("%d", val, grouping=True if options and options.grouped_numbers else False)
+
+    lines_by_times = {}
+    header = template % header_keys
+
+    print("", file=stream)
+    print(header, file=stream)
+    print('=' * len(header), file=stream)
+
+    comment = ""
+    for lineno, line in zip(linenos, sublines):
+        nhits, time, per_hit, percent, level_sum = line_stats.get(lineno, empty)
+        block_sum = 0
+        block_sum_per_hit = 0
+
+        if time:
+            time = int(time)
+
+        if do_block_sums:
+            for s in level_sum:
+                block_sum += s
+
+            if block_sum > 0:
+                block_sum += time
+                block_sum_per_hit = block_sum/float(nhits)
+
+            if time and block_sum:
+                lines_by_times[block_sum] = lineno
+
+        print(template % {"line": lineno,
+                          "hits": grouped_number(nhits),
+                          "time": grouped_number(time),
+                          "per_hit": '%s' % grouped_number(per_hit),
+                          "p_time": grouped_number(percent),
+                          "block_sum": grouped_number(block_sum),
+                          "block_sum_hit": grouped_number(block_sum_per_hit),
+                          "line_contents": line.rstrip('\n').rstrip('\r'),
+                          "comment": comment},
+              file=stream)
+    print("", file=stream)
+
+    if options and options.print_sorted_blocks:
+        # Print the line numbers with biggest sums
+        ts = reversed(sorted(lines_by_times.keys()))
+        for i, t in enumerate(ts):
+            if i == int(options.print_sorted_blocks):
+                break
+            print("Line %s, block sum: %s" % (lines_by_times[t], t), file=stream)
+
+def calculate_block_sums(line_stats, linenos, sublines):
+    sum_level = [] # Contains tuples of (indent, linenumber, sum)
+    prev_indent = -1
+
+    # Calculate the sums
+    for i in range(len(sublines)):
+        line = sublines[i]
+        lineno = linenos[i]
+        t_sum = []
+
+        def space_count(line):
+            """Finds the indent level for a source line"""
+            m = re.match(r"(\s+)", line.lstrip("\n"))
+            if not m:
+                return 0
+            spaces = m.group(1)
+            return len(spaces)
+
+        # Ignore empty lines and commented lines
+        if not line.rstrip() or line.startswith("#"):
+            continue
+
+        indent = space_count(line)
+        # We are up at least one level. Remove indents from sum_level
+        if indent < prev_indent:
+            for a in xrange(len(sum_level) - 1, -1, -1):
+                indent_l, lineno_l, t_sum = sum_level[a]
+                if indent_l >= indent:
+                    del sum_level[a]
+        prev_indent = indent
+
+        if lineno in line_stats:
+            time = line_stats[lineno][1]
+            # Add the time for this line to previous sum levels
+            for l in sum_level:
+                l[2].append(time)
+
+        # We want to show the sum for the following blocks
+        if not re.match(r'^(def |for |while |if |else:|elif )', line.strip()):
+            continue
+        # If the next has the same indent we know its a multiline comment, so ignore
+        if len(sublines) > i+1 and space_count(sublines[i+1]) == indent:
+            continue
+
+        # Missing in stats
+        if not lineno in line_stats:
+            # If it's an else, we take the nhits from next line with stats
+            if re.match(r'^(else:)', line.strip()):
+                indent = space_count(line)
+                # Find first line with times after this
+                print_  = True
+                for u in range(i +1, len(sublines)):
+                    next_indent = space_count(sublines[u])
+                    # Multiline comments can have empty lines
+                    # Next indent is less (higher level)
+                    if next_indent != 0 and next_indent < indent:
+                        # We didn't find any lines with with timings for this block
+                        break
+                    if not linenos[u] in line_stats:
+                        continue
+                    nhits, time, per_hit, percent, level_sum = line_stats.get(linenos[u], empty)
+                    line_stats[lineno] = (nhits, 0, 0, 0, [])
+                    break
+            elif re.match(r'^(def )', line.strip()):
+                if i == 0:  # If def is on first line, cannot check previous
+                    continue
+                prev_line = sublines[i - 1]
+                prev_lineno = linenos[i - 1]
+
+                # With profile decorator, the stats are saved on the @profile line
+                # and not the def line. Move the values from @profile line to def line
+                if re.match(r'^(@profile)', prev_line.strip()):
+                    # No support for block sum in generator functions
+                    if prev_lineno in line_stats:
+                        line_stats[lineno] = line_stats[prev_lineno]
+                        del line_stats[prev_lineno]
+
+        if lineno in line_stats:
+            sum_level.insert(0, (indent, lineno, line_stats[lineno][4]))
+
+
+def show_text(stats, unit, stream=None, stripzeros=False, options=None):
     """ Show text for the given timings.
     """
     if stream is None:
@@ -226,7 +372,7 @@ def show_text(stats, unit, stream=None, stripzeros=False):
 
     stream.write('Timer unit: %g s\n\n' % unit)
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros, options=options)
 
 # A %lprun magic for IPython.
 def magic_lprun(self, parameter_s=''):
@@ -382,14 +528,25 @@ def load_stats(filename):
         return pickle.load(f)
 
 
+def add_line_profile_options(parser):
+    parser.add_argument('--version', action='version', version='%%(prog)s %s' % _version)
+    parser.add_argument("-g", "--grouped-numbers",
+                        action="store_true", default=False,
+                        help="Print numbers in groups")
+    parser.add_argument("--block-sum",
+                        action="store_true", default=False,
+                        help="Show code block sums")
+    parser.add_argument("--print-sorted-blocks", nargs="?", const=5, type=int,
+                        help="Print block sums sorted by time (Default blocks to print: %(const)s)")
+
 def main():
     parser = argparse.ArgumentParser(description='Show profile output')
     parser.add_argument('filename', help='Filename')
-    parser.add_argument('--version', action='version', version='%%(prog)s %s' % _version)
+    add_line_profile_options(parser)
 
     args = parser.parse_args()
     lstats = load_stats(args.filename)
-    show_text(lstats.timings, lstats.unit)
+    show_text(lstats.timings, lstats.unit, options=args)
 
 if __name__ == '__main__':
     main()

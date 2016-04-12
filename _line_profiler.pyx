@@ -198,7 +198,7 @@ cdef int python_trace_callback(object self_, PyFrameObject *py_frame, int what,
     self = <LineProfiler>self_
     last_time = self.last_time
 
-    if what == PyTrace_LINE or what == PyTrace_RETURN:
+    if what == PyTrace_LINE or what == PyTrace_RETURN or what == PyTrace_CALL:
         code = <object>py_frame.f_code
         if code in self.code_map:
             time = hpTimer()
@@ -215,6 +215,8 @@ cdef int python_trace_callback(object self_, PyFrameObject *py_frame, int what,
             if what == PyTrace_LINE:
                 # Get the time again. This way, we don't record much time wasted
                 # in this function.
+                last_time[code] = LastTime(py_frame.f_lineno, hpTimer())
+            elif what == PyTrace_CALL and (py_frame.f_code.co_flags & 0x0020) == 0: # Ignore generator functions
                 last_time[code] = LastTime(py_frame.f_lineno, hpTimer())
             else:
                 # We are returning from a function, not executing a line. Delete
