@@ -13,11 +13,13 @@ except ImportError:
 import functools
 import inspect
 import linecache
-import optparse
+import argparse
 import os
 import sys
 
 from _line_profiler import LineProfiler as CLineProfiler
+
+_version = "1.0b2"
 
 # Python 2/3 compatibility utils
 # ===========================================================
@@ -381,13 +383,12 @@ def load_stats(filename):
 
 
 def main():
-    usage = "usage: %prog profile.lprof"
-    parser = optparse.OptionParser(usage=usage, version='%prog 1.0b2')
+    parser = argparse.ArgumentParser(description='Show profile output')
+    parser.add_argument('filename', help='Filename')
+    parser.add_argument('--version', action='version', version='%%(prog)s %s' % _version)
 
-    options, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error("Must provide a filename.")
-    lstats = load_stats(args[0])
+    args = parser.parse_args()
+    lstats = load_stats(args.filename)
     show_text(lstats.timings, lstats.unit)
 
 if __name__ == '__main__':

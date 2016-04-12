@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 """ Script to conveniently run profilers on code in a variety of circumstances.
 """
 
 import functools
-import optparse
+import argparse
 import os
 import sys
 
@@ -146,46 +146,45 @@ def find_script(script_name):
     raise SystemExit(1)
 
 
-def main(args=None):
-    if args is None:
-        args = sys.argv
-    usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
-    parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
-    parser.allow_interspersed_args = False
-    parser.add_option('-l', '--line-by-line', action='store_true',
-        help="Use the line-by-line profiler from the line_profiler module "
-        "instead of Profile. Implies --builtin.")
-    parser.add_option('-b', '--builtin', action='store_true',
-        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
-            "'profile.disable()' in your code to turn it on and off, or "
-            "'@profile' to decorate a single function, or 'with profile:' "
-            "to profile a single section of code.")
-    parser.add_option('-o', '--outfile', default=None,
-        help="Save stats to <outfile>")
-    parser.add_option('-s', '--setup', default=None,
-        help="Code to execute before the code to profile")
-    parser.add_option('-v', '--view', action='store_true',
-        help="View the results of the profile in addition to saving it.")
+def main():
+    from line_profiler import _version
 
-    if not sys.argv[1:]:
-        parser.print_usage()
-        sys.exit(2)
+    parser = argparse.ArgumentParser(description='Profile python scripts')
+    parser.add_argument('--version', action='version', version='%%(prog)s %s' % _version)
+    parser.add_argument('-l', '--line-by-line', action='store_true',
+                        help="Use the line-by-line profiler from the line_profiler module "
+                        "instead of Profile. Implies --builtin.")
+    parser.add_argument('-b', '--builtin', action='store_true',
+                        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
+                        "'profile.disable()' in your code to turn it on and off, or "
+                        "'@profile' to decorate a single function, or 'with profile:' "
+                        "to profile a single section of code.")
+    parser.add_argument('-o', '--outfile', default=None,
+                        help="Save stats to <outfile>")
 
-    options, args = parser.parse_args()
+    parser.add_argument('-s', '--setup', default=None,
+                        help="Code to execute before the code to profile")
+    parser.add_argument('-v', '--view', action='store_true',
+                        help="View the results of the profile in addition to saving it.")
+    parser.add_argument('script', help='Script to profile')
+    parser.add_argument('script_args', nargs=argparse.REMAINDER, metavar='')
 
-    if not options.outfile:
-        if options.line_by_line:
+    args = parser.parse_args()
+
+    if not args.outfile:
+        if args.line_by_line:
             extension = 'lprof'
         else:
             extension = 'prof'
-        options.outfile = '%s.%s' % (os.path.basename(args[0]), extension)
+        args.outfile = '%s.%s' % (os.path.basename(args[0]), extension)
 
+    # Set sys args for the script to run
+    sys.argv[:] = [args.script] + args.script_args
 
-    sys.argv[:] = args
-    if options.setup is not None:
+    if args.setup is not None:
         # Run some setup code outside of the profiler. This is good for large
         # imports.
-        setup_file = find_script(options.setup)
+        setup_file = find_script(args.setup)
         __file__ = setup_file
         __name__ = '__main__'
         # Make sure the script's directory is on sys.path instead of just
@@ -194,20 +193,21 @@ def main(args=None):
         ns = locals()
         execfile(setup_file, ns, ns)
 
-    if options.line_by_line:
+    if args.line_by_line:
         import line_profiler
         prof = line_profiler.LineProfiler()
-        options.builtin = True
+        args.builtin = True
     else:
         prof = ContextualProfile()
-    if options.builtin:
+
+    if args.builtin:
         if PY3:
             import builtins
         else:
             import __builtin__ as builtins
         builtins.__dict__['profile'] = prof
 
-    script_file = find_script(sys.argv[0])
+    script_file = find_script(args.script)
     __file__ = script_file
     __name__ = '__main__'
     # Make sure the script's directory is on sys.path instead of just
@@ -218,17 +218,17 @@ def main(args=None):
         try:
             execfile_ = execfile
             ns = locals()
-            if options.builtin:
+            if args.builtin:
                 execfile(script_file, ns, ns)
             else:
                 prof.runctx('execfile_(%r, globals())' % (script_file,), ns, ns)
         except (KeyboardInterrupt, SystemExit):
             pass
     finally:
-        prof.dump_stats(options.outfile)
-        print('Wrote profile results to %s' % options.outfile)
-        if options.view:
+        prof.dump_stats(args.outfile)
+        print('Wrote profile results to %s' % args.outfile)
+        if args.view:
             prof.print_stats()
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main())
