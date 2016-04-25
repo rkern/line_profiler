@@ -225,8 +225,9 @@ def main(args=None):
         except (KeyboardInterrupt, SystemExit):
             pass
     finally:
-        prof.dump_stats(options.outfile)
-        print('Wrote profile results to %s' % options.outfile)
+        pid_outfile = '{0}.{1}'.format(options.outfile, os.getpid())
+        prof.dump_stats(pid_outfile)
+        print('Wrote profile results to %s' % pid_outfile)
         if options.view:
             prof.print_stats()
 
