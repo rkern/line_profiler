@@ -133,22 +133,28 @@ cdef class LineProfiler:
             self.code_map[code] = {}
             self.functions.append(func)
 
+    property enable_count:
+        def __get__(self):
+            if not hasattr(self.threaddata, 'enable_count'):
+                self.threaddata.enable_count = 0
+            return self.threaddata.enable_count
+        def __set__(self, value):
+            self.threaddata.enable_count = value
+
     def enable_by_count(self):
         """ Enable the profiler if it hasn't been enabled before.
         """
-        if not hasattr(self.threaddata, 'enable_count'):                       
-            self.threaddata.enable_count = 0                                   
-        if self.threaddata.enable_count == 0:
+        if self.enable_count == 0:
             self.enable()
-        self.threaddata.enable_count += 1
+        self.enable_count += 1
 
     def disable_by_count(self):
         """ Disable the profiler if the number of disable requests matches the
         number of enable requests.
         """
-        if self.threaddata.enable_count > 0:
-            self.threaddata.enable_count -= 1
-            if self.threaddata.enable_count == 0:
+        if self.enable_count > 0:
+            self.enable_count -= 1
+            if self.enable_count == 0:
                 self.disable()
 
     def __enter__(self):
