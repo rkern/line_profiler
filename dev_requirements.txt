@@ -1,2 +1,2 @@
 ipython
-Cython
+Cython --install-option='--no-cython-compile'
