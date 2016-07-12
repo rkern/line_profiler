@@ -17,6 +17,8 @@ import optparse
 import os
 import sys
 
+from IPython.core.magic import (Magics, magics_class, line_magic)
+
 from _line_profiler import LineProfiler as CLineProfiler
 
 # Python 2/3 compatibility utils
@@ -226,150 +228,153 @@ def show_text(stats, unit, stream=None, stripzeros=False):
     for (fn, lineno, name), timings in sorted(stats.items()):
         show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
 
-# A %lprun magic for IPython.
-def magic_lprun(self, parameter_s=''):
-    """ Execute a statement under the line-by-line profiler from the
-    line_profiler module.
+@magics_class
+class LineProfilerMagics(Magics):
 
-    Usage:
-      %lprun -f func1 -f func2 <statement>
+    @line_magic
+    def lprun(self, parameter_s=''):
+        """ Execute a statement under the line-by-line profiler from the
+        line_profiler module.
 
-    The given statement (which doesn't require quote marks) is run via the
-    LineProfiler. Profiling is enabled for the functions specified by the -f
-    options. The statistics will be shown side-by-side with the code through the
-    pager once the statement has completed.
+        Usage:
+          %lprun -f func1 -f func2 <statement>
 
-    Options:
+        The given statement (which doesn't require quote marks) is run via the
+        LineProfiler. Profiling is enabled for the functions specified by the -f
+        options. The statistics will be shown side-by-side with the code through the
+        pager once the statement has completed.
 
-    -f <function>: LineProfiler only profiles functions and methods it is told
-    to profile.  This option tells the profiler about these functions. Multiple
-    -f options may be used. The argument may be any expression that gives
-    a Python function or method object. However, one must be careful to avoid
-    spaces that may confuse the option parser. Additionally, functions defined
-    in the interpreter at the In[] prompt or via %run currently cannot be
-    displayed.  Write these functions out to a separate file and import them.
+        Options:
 
-    -m <module>: Get all the functions/methods in a module
+        -f <function>: LineProfiler only profiles functions and methods it is told
+        to profile.  This option tells the profiler about these functions. Multiple
+        -f options may be used. The argument may be any expression that gives
+        a Python function or method object. However, one must be careful to avoid
+        spaces that may confuse the option parser. Additionally, functions defined
+        in the interpreter at the In[] prompt or via %run currently cannot be
+        displayed.  Write these functions out to a separate file and import them.
 
-    One or more -f or -m options are required to get any useful results.
+        -m <module>: Get all the functions/methods in a module
 
-    -D <filename>: dump the raw statistics out to a pickle file on disk. The
-    usual extension for this is ".lprof". These statistics may be viewed later
-    by running line_profiler.py as a script.
+        One or more -f or -m options are required to get any useful results.
 
-    -T <filename>: dump the text-formatted statistics with the code side-by-side
-    out to a text file.
+        -D <filename>: dump the raw statistics out to a pickle file on disk. The
+        usual extension for this is ".lprof". These statistics may be viewed later
+        by running line_profiler.py as a script.
 
-    -r: return the LineProfiler object after it has completed profiling.
+        -T <filename>: dump the text-formatted statistics with the code side-by-side
+        out to a text file.
 
-    -s: strip out all entries from the print-out that have zeros.
-    """
-    # Local imports to avoid hard dependency.
-    from distutils.version import LooseVersion
-    import IPython
-    ipython_version = LooseVersion(IPython.__version__)
-    if ipython_version < '0.11':
-        from IPython.genutils import page
-        from IPython.ipstruct import Struct
-        from IPython.ipapi import UsageError
-    else:
-        from IPython.core.page import page
-        from IPython.utils.ipstruct import Struct
-        from IPython.core.error import UsageError
+        -r: return the LineProfiler object after it has completed profiling.
 
-    # Escape quote markers.
-    opts_def = Struct(D=[''], T=[''], f=[], m=[])
-    parameter_s = parameter_s.replace('"', r'\"').replace("'", r"\'")
-    opts, arg_str = self.parse_options(parameter_s, 'rsf:m:D:T:', list_all=True)
-    opts.merge(opts_def)
+        -s: strip out all entries from the print-out that have zeros.
+        """
+        # Local imports to avoid hard dependency.
+        from distutils.version import LooseVersion
+        import IPython
+        ipython_version = LooseVersion(IPython.__version__)
+        if ipython_version < '0.11':
+            from IPython.genutils import page
+            from IPython.ipstruct import Struct
+            from IPython.ipapi import UsageError
+        else:
+            from IPython.core.page import page
+            from IPython.utils.ipstruct import Struct
+            from IPython.core.error import UsageError
 
-    global_ns = self.shell.user_global_ns
-    local_ns = self.shell.user_ns
+        # Escape quote markers.
+        opts_def = Struct(D=[''], T=[''], f=[], m=[])
+        parameter_s = parameter_s.replace('"', r'\"').replace("'", r"\'")
+        opts, arg_str = self.parse_options(parameter_s, 'rsf:m:D:T:', list_all=True)
+        opts.merge(opts_def)
 
-    # Get the requested functions.
-    funcs = []
-    for name in opts.f:
+        global_ns = self.shell.user_global_ns
+        local_ns = self.shell.user_ns
+
+        # Get the requested functions.
+        funcs = []
+        for name in opts.f:
+            try:
+                funcs.append(eval(name, global_ns, local_ns))
+            except Exception as e:
+                raise UsageError('Could not find function %r.\n%s: %s' % (name,
+                    e.__class__.__name__, e))
+
+        profile = LineProfiler(*funcs)
+
+        # Get the modules, too
+        for modname in opts.m:
+            try:
+                mod = __import__(modname, fromlist=[''])
+                profile.add_module(mod)
+            except Exception as e:
+                raise UsageError('Could not find module %r.\n%s: %s' % (modname,
+                    e.__class__.__name__, e))
+
+        # Add the profiler to the builtins for @profile.
+        if PY3:
+            import builtins
+        else:
+            import __builtin__ as builtins
+
+        if 'profile' in builtins.__dict__:
+            had_profile = True
+            old_profile = builtins.__dict__['profile']
+        else:
+            had_profile = False
+            old_profile = None
+        builtins.__dict__['profile'] = profile
+
         try:
-            funcs.append(eval(name, global_ns, local_ns))
-        except Exception as e:
-            raise UsageError('Could not find function %r.\n%s: %s' % (name,
-                e.__class__.__name__, e))
+            try:
+                profile.runctx(arg_str, global_ns, local_ns)
+                message = ''
+            except SystemExit:
+                message = """*** SystemExit exception caught in code being profiled."""
+            except KeyboardInterrupt:
+                message = ("*** KeyboardInterrupt exception caught in code being "
+                    "profiled.")
+        finally:
+            if had_profile:
+                builtins.__dict__['profile'] = old_profile
 
-    profile = LineProfiler(*funcs)
+        # Trap text output.
+        stdout_trap = StringIO()
+        profile.print_stats(stdout_trap, stripzeros='s' in opts)
+        output = stdout_trap.getvalue()
+        output = output.rstrip()
 
-    # Get the modules, too
-    for modname in opts.m:
-        try:
-            mod = __import__(modname, fromlist=[''])
-            profile.add_module(mod)
-        except Exception as e:
-            raise UsageError('Could not find module %r.\n%s: %s' % (modname,
-                e.__class__.__name__, e))
+        if ipython_version < '0.11':
+            page(output, screen_lines=self.shell.rc.screen_length)
+        else:
+            page(output)
+        print(message, end="")
 
-    # Add the profiler to the builtins for @profile.
-    if PY3:
-        import builtins
-    else:
-        import __builtin__ as builtins
+        dump_file = opts.D[0]
+        if dump_file:
+            profile.dump_stats(dump_file)
+            print('\n*** Profile stats pickled to file %r. %s' % (
+                dump_file, message))
 
-    if 'profile' in builtins.__dict__:
-        had_profile = True
-        old_profile = builtins.__dict__['profile']
-    else:
-        had_profile = False
-        old_profile = None
-    builtins.__dict__['profile'] = profile
+        text_file = opts.T[0]
+        if text_file:
+            pfile = open(text_file, 'w')
+            pfile.write(output)
+            pfile.close()
+            print('\n*** Profile printout saved to text file %r. %s' % (
+                text_file, message))
 
-    try:
-        try:
-            profile.runctx(arg_str, global_ns, local_ns)
-            message = ''
-        except SystemExit:
-            message = """*** SystemExit exception caught in code being profiled."""
-        except KeyboardInterrupt:
-            message = ("*** KeyboardInterrupt exception caught in code being "
-                "profiled.")
-    finally:
-        if had_profile:
-            builtins.__dict__['profile'] = old_profile
+        return_value = None
+        if 'r' in opts:
+            return_value = profile
 
-    # Trap text output.
-    stdout_trap = StringIO()
-    profile.print_stats(stdout_trap, stripzeros='s' in opts)
-    output = stdout_trap.getvalue()
-    output = output.rstrip()
-
-    if ipython_version < '0.11':
-        page(output, screen_lines=self.shell.rc.screen_length)
-    else:
-        page(output)
-    print(message, end="")
-
-    dump_file = opts.D[0]
-    if dump_file:
-        profile.dump_stats(dump_file)
-        print('\n*** Profile stats pickled to file %r. %s' % (
-            dump_file, message))
-
-    text_file = opts.T[0]
-    if text_file:
-        pfile = open(text_file, 'w')
-        pfile.write(output)
-        pfile.close()
-        print('\n*** Profile printout saved to text file %r. %s' % (
-            text_file, message))
-
-    return_value = None
-    if 'r' in opts:
-        return_value = profile
-
-    return return_value
+        return return_value
 
 
 def load_ipython_extension(ip):
     """ API for IPython to recognize this module as an IPython extension.
     """
-    ip.define_magic('lprun', magic_lprun)
+    ip.register_magics(LineProfilerMagics)
 
 
 def load_stats(filename):
