@@ -166,6 +166,8 @@ def main(args=None):
         help="Code to execute before the code to profile")
     parser.add_option('-v', '--view', action='store_true',
         help="View the results of the profile in addition to saving it.")
+    parser.add_option('-p', '--pythonpath', action='append',
+        help="Extra additions to PYTHONPATH.", default=None)
 
     if not sys.argv[1:]:
         parser.print_usage()
@@ -213,6 +215,11 @@ def main(args=None):
     # Make sure the script's directory is on sys.path instead of just
     # kernprof.py's.
     sys.path.insert(0, os.path.dirname(script_file))
+
+    # Add user-provided directories to sys.path.
+    if options.pythonpath is not None:
+        for path in options.pythonpath:
+            sys.path.insert(0, path)
 
     try:
         try:
