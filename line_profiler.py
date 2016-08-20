@@ -369,7 +369,11 @@ def magic_lprun(self, parameter_s=''):
 def load_ipython_extension(ip):
     """ API for IPython to recognize this module as an IPython extension.
     """
-    ip.define_magic('lprun', magic_lprun)
+    if hasattr(ip, 'define_magic'):
+        ip.define_magic('lprun', magic_lprun)
+        return
+
+    ip.register_magic_function(magic_lprun, magic_kind='line', magic_name='lprun')
 
 
 def load_stats(filename):
