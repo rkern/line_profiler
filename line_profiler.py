@@ -22,6 +22,7 @@ from _line_profiler import LineProfiler as CLineProfiler
 # Python 2/3 compatibility utils
 # ===========================================================
 PY3 = sys.version_info[0] == 3
+PY35 = PY3 and sys.version_info[1] >= 5
 
 # exec (from https://bitbucket.org/gutworth/six/):
 if PY3:
@@ -40,6 +41,14 @@ else:
         elif _locs_ is None:
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
+
+if PY35:
+    import inspect
+    def is_coroutine(f):
+        return inspect.iscoroutinefunction(f)
+else:
+    def is_coroutine(f):
+        return False
 
 # ============================================================
 
@@ -60,7 +69,9 @@ class LineProfiler(CLineProfiler):
         it on function exit.
         """
         self.add_function(func)
-        if is_generator(func):
+        if is_coroutine(func):
+            wrapper = self.wrap_coroutine(func)
+        elif is_generator(func):
             wrapper = self.wrap_generator(func)
         else:
             wrapper = self.wrap_function(func)
@@ -101,6 +112,10 @@ class LineProfiler(CLineProfiler):
                 self.disable_by_count()
             return result
         return wrapper
+
+    if PY35:
+        import line_profiler_py35
+        wrap_coroutine = line_profiler_py35.wrap_coroutine
 
     def dump_stats(self, filename):
         """ Dump a representation of the data to a file as a pickled LineStats
