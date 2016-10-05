@@ -53,8 +53,6 @@ else:
 # ============================================================
 
 CO_GENERATOR = 0x0020
-
-
 def is_generator(f):
     """ Return True if a function is a generator.
     """
@@ -71,7 +69,7 @@ class LineProfiler(CLineProfiler):
         it on function exit.
         """
         self.add_function(func)
-        if PY35 and is_coroutine(func):
+        if is_coroutine(func):
             wrapper = self.wrap_coroutine(func)
         elif is_generator(func):
             wrapper = self.wrap_generator(func)
@@ -116,18 +114,8 @@ class LineProfiler(CLineProfiler):
         return wrapper
 
     if PY35:
-        def wrap_coroutine(self, func):
-            """ Wrap a Python 3.5 coroutine to profile it.
-            """
-            @functools.wraps(func)
-            async def wrapper(*args, **kwds):
-                self.enable_by_count()
-                try:
-                    result = await func(*args, **kwds)
-                finally:
-                    self.disable_by_count()
-                return result
-            return wrapper
+        import line_profiler_py35
+        wrap_coroutine = line_profiler_py35.wrap_coroutine
 
     def dump_stats(self, filename):
         """ Dump a representation of the data to a file as a pickled LineStats
