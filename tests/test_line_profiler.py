@@ -60,6 +60,18 @@ class TestLineProfiler(unittest.TestCase):
         self.assertEqual(lp.enable_count, 0)
         self.assertEqual(lp.last_time, {})
 
+    def test_enable_profile_all(self):
+        lp = LineProfiler()
+
+        lp.enable_profile_all()
+        lp.enable()
+        value = f(10)
+        lp.disable()
+
+        self.assertEqual(value, f(10))
+        self.assertEqual(len(lp.code_map.keys()), 1)
+        self.assertEqual(len(lp.code_map[f.__code__]), 2)
+
     def test_function_decorator(self):
         profile = LineProfiler()
         f_wrapped = profile(f)

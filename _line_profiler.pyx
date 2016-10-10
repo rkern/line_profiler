@@ -109,6 +109,7 @@ cdef class LineProfiler:
     cdef public dict last_time
     cdef public double timer_unit
     cdef public long enable_count
+    cdef public bint profile_all
 
     def __init__(self, *functions):
         self.functions = []
@@ -116,6 +117,7 @@ cdef class LineProfiler:
         self.last_time = {}
         self.timer_unit = hpTimerUnit()
         self.enable_count = 0
+        self.profile_all = False
         for func in functions:
             self.add_function(func)
 
@@ -131,6 +133,16 @@ cdef class LineProfiler:
         if code not in self.code_map:
             self.code_map[code] = {}
             self.functions.append(func)
+
+    def enable_profile_all(self):
+        """ Record line profiling information for all executed code.
+        """
+        self.profile_all = True
+
+    def disable_profile_all(self):
+        """ Disable recording line profiling information for all executed code.
+        """
+        self.profile_all = False
 
     def enable_by_count(self):
         """ Enable the profiler if it hasn't been enabled before.
@@ -197,6 +209,12 @@ cdef int python_trace_callback(object self_, PyFrameObject *py_frame, int what,
 
     self = <LineProfiler>self_
     last_time = self.last_time
+
+    if self.profile_all and what == PyTrace_CALL and <object>py_frame.f_code not in self.code_map:
+        # enable recording profiling information for this function if
+        # profile_all is enabled
+        code = <object>py_frame.f_code
+        self.code_map[code] = {}
 
     if what == PyTrace_LINE or what == PyTrace_RETURN:
         code = <object>py_frame.f_code
