@@ -15,7 +15,7 @@ They are available under a `BSD license`_.
 Installation
 ============
 
-Releases of `line_profiler` can be installed using pip_::
+Releases of `line_profiler` can be installed using pip::
 
     $ pip install line_profiler
 
@@ -354,6 +354,10 @@ Bugs and pull requested can be submitted on GitHub_.
 
 Changes
 =======
+
+2.0
+~~~
+* BUG: Added support for IPython 5.0+, removed support for IPython <=0.12
 
 1.1
 ~~~

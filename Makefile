@@ -1,8 +1,8 @@
 all:
 	@echo 'Just some tools to help me make releases. Nothing for users.'
 
-index.html: README.txt
-	rst2html.py README.txt index.html
+index.html: README.rst
+	rst2html.py README.rst index.html
 
 pypi-site-docs.zip: index.html kernprof.py LICENSE.txt
 	zip -r $@ $?
