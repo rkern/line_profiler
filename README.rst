@@ -355,6 +355,10 @@ Bugs and pull requested can be submitted on GitHub_.
 Changes
 =======
 
+2.0
+~~~
+* BUG: Added support for IPython 5.0+, removed support for IPython <=0.12
+
 1.1
 ~~~
 * BUG: Read source files as bytes.

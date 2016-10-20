@@ -35,12 +35,13 @@ function-level profiling tools in the Python standard library.
 
 setup(
     name = 'line_profiler',
-    version = '1.0',
+    version = '2.0',
     author = 'Robert Kern',
     author_email = 'robert.kern@enthought.com',
     description = 'Line-by-line profiler.',
     long_description = long_description,
     url = 'https://github.com/rkern/line_profiler',
+    download_url = 'https://github.com/rkern/line_profiler/tarball/2.0',
     ext_modules = [
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
@@ -48,6 +49,7 @@ setup(
         ),
     ],
     license = "BSD",
+    keywords = ['timing', 'timer', 'profiling', 'profiler', 'line_profiler'],
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -70,5 +72,8 @@ setup(
             'kernprof=kernprof:main',
         ],
     },
+    install_requires = [
+        'IPython>=0.13',
+    ],
     cmdclass = cmdclass,
 )

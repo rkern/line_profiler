@@ -18,6 +18,9 @@ import os
 import sys
 
 from IPython.core.magic import (Magics, magics_class, line_magic)
+from IPython.core.page import page
+from IPython.utils.ipstruct import Struct
+from IPython.core.error import UsageError
 
 from _line_profiler import LineProfiler as CLineProfiler
 
@@ -269,18 +272,6 @@ class LineProfilerMagics(Magics):
 
         -s: strip out all entries from the print-out that have zeros.
         """
-        # Local imports to avoid hard dependency.
-        from distutils.version import LooseVersion
-        import IPython
-        ipython_version = LooseVersion(IPython.__version__)
-        if ipython_version < '0.11':
-            from IPython.genutils import page
-            from IPython.ipstruct import Struct
-            from IPython.ipapi import UsageError
-        else:
-            from IPython.core.page import page
-            from IPython.utils.ipstruct import Struct
-            from IPython.core.error import UsageError
 
         # Escape quote markers.
         opts_def = Struct(D=[''], T=[''], f=[], m=[])

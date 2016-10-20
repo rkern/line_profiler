@@ -11,4 +11,5 @@ script:
   - python -m unittest discover -v tests
 notifications:
   email:
+      - brett.olsen+travis-ci@gmail.com
       - robert.kern+travis-ci@gmail.com
