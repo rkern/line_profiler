@@ -335,10 +335,7 @@ class LineProfilerMagics(Magics):
         output = stdout_trap.getvalue()
         output = output.rstrip()
 
-        if ipython_version < '0.11':
-            page(output, screen_lines=self.shell.rc.screen_length)
-        else:
-            page(output)
+        page(output)
         print(message, end="")
 
         dump_file = opts.D[0]
