@@ -15,7 +15,7 @@ They are available under a `BSD license`_.
 Installation
 ============
 
-Releases of `line_profiler` can be installed using pip_::
+Releases of `line_profiler` can be installed using pip::
 
     $ pip install line_profiler
 
