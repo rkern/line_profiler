@@ -1,4 +1,5 @@
 """ This file is only imported in python 3.5 environments """
+import functools
 
 def wrap_coroutine(self, func):
     """
