@@ -21,6 +21,7 @@ from IPython.core.magic import (Magics, magics_class, line_magic)
 from IPython.core.page import page
 from IPython.utils.ipstruct import Struct
 from IPython.core.error import UsageError
+from IPython.utils.PyColorize import Parser
 
 from _line_profiler import LineProfiler as CLineProfiler
 
@@ -54,6 +55,14 @@ def is_generator(f):
     """
     isgen = (f.__code__.co_flags & CO_GENERATOR) != 0
     return isgen
+
+
+_PARSER = Parser()
+
+
+def _format_line(line, colorize):
+    line = _PARSER.format(line, out='str') if colorize else line
+    return line.rstrip('\n').rstrip('\r')
 
 
 class LineProfiler(CLineProfiler):
@@ -115,11 +124,11 @@ class LineProfiler(CLineProfiler):
         with open(filename, 'wb') as f:
             pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
 
-    def print_stats(self, stream=None, stripzeros=False):
+    def print_stats(self, stream=None, stripzeros=False, colorize=False):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros)
+        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros, colorize=colorize)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -166,7 +175,7 @@ class LineProfiler(CLineProfiler):
         return nfuncsadded
 
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None, stripzeros=False):
+def show_func(filename, start_lineno, func_name, timings, unit, stream=None, stripzeros=False, colorize=False):
     """ Show results for a single function.
     """
     if stream is None:
@@ -216,12 +225,12 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
     for lineno, line in zip(linenos, sublines):
         nhits, time, per_hit, percent = d.get(lineno, empty)
         txt = template % (lineno, nhits, time, per_hit, percent,
-                          line.rstrip('\n').rstrip('\r'))
+                          _format_line(line, colorize))
         stream.write(txt)
         stream.write("\n")
     stream.write("\n")
 
-def show_text(stats, unit, stream=None, stripzeros=False):
+def show_text(stats, unit, stream=None, stripzeros=False, colorize=False):
     """ Show text for the given timings.
     """
     if stream is None:
@@ -229,7 +238,8 @@ def show_text(stats, unit, stream=None, stripzeros=False):
 
     stream.write('Timer unit: %g s\n\n' % unit)
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit,
+                  stream=stream, stripzeros=stripzeros, colorize=colorize)
 
 @magics_class
 class LineProfilerMagics(Magics):
@@ -331,7 +341,7 @@ class LineProfilerMagics(Magics):
 
         # Trap text output.
         stdout_trap = StringIO()
-        profile.print_stats(stdout_trap, stripzeros='s' in opts)
+        profile.print_stats(stdout_trap, stripzeros='s' in opts, colorize=True)
         output = stdout_trap.getvalue()
         output = output.rstrip()
 
@@ -376,12 +386,13 @@ def load_stats(filename):
 def main():
     usage = "usage: %prog profile.lprof"
     parser = optparse.OptionParser(usage=usage, version='%prog 1.0b2')
+    parser.add_option('-c', '--color', action='store_true', help='colorize the output')
 
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Must provide a filename.")
     lstats = load_stats(args[0])
-    show_text(lstats.timings, lstats.unit)
+    show_text(lstats.timings, lstats.unit, colorize=options.color)
 
 if __name__ == '__main__':
     main()
