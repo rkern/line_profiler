@@ -1,4 +1,5 @@
 import os
+import sys
 
 # Monkeypatch distutils.
 import setuptools
@@ -33,6 +34,11 @@ profile Python applications and scripts either with line_profiler or with the
 function-level profiling tools in the Python standard library.
 """
 
+
+py_modules = ['line_profiler', 'kernprof']
+if sys.version_info > (3, 4):
+    py_modules += ['line_profiler_py35']
+
 setup(
     name = 'line_profiler',
     version = '1.0',
@@ -64,7 +70,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         "Topic :: Software Development",
     ],
-    py_modules = ['line_profiler', 'kernprof'],
+    py_modules = py_modules,
     entry_points = {
         'console_scripts': [
             'kernprof=kernprof:main',
