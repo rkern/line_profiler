@@ -253,9 +253,7 @@ class LineProfilerMagics(Magics):
         to profile.  This option tells the profiler about these functions. Multiple
         -f options may be used. The argument may be any expression that gives
         a Python function or method object. However, one must be careful to avoid
-        spaces that may confuse the option parser. Additionally, functions defined
-        in the interpreter at the In[] prompt or via %run currently cannot be
-        displayed.  Write these functions out to a separate file and import them.
+        spaces that may confuse the option parser.
 
         -m <module>: Get all the functions/methods in a module
 
