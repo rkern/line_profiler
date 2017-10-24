@@ -130,11 +130,11 @@ class LineProfiler(CLineProfiler):
         with open(filename, 'wb') as f:
             pickle.dump(lstats, f, pickle.HIGHEST_PROTOCOL)
 
-    def print_stats(self, stream=None, stripzeros=False):
+    def print_stats(self, stream=None, output_unit=None, stripzeros=False):
         """ Show the gathered statistics.
         """
         lstats = self.get_stats()
-        show_text(lstats.timings, lstats.unit, stream=stream, stripzeros=stripzeros)
+        show_text(lstats.timings, lstats.unit, output_unit=output_unit, stream=stream, stripzeros=stripzeros)
 
     def run(self, cmd):
         """ Profile a single executable statment in the main namespace.
@@ -181,7 +181,8 @@ class LineProfiler(CLineProfiler):
         return nfuncsadded
 
 
-def show_func(filename, start_lineno, func_name, timings, unit, stream=None, stripzeros=False):
+def show_func(filename, start_lineno, func_name, timings, unit,
+    output_unit=None, stream=None, stripzeros=False):
     """ Show results for a single function.
     """
     if stream is None:
@@ -197,6 +198,10 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
 
     if stripzeros and total_time == 0:
         return
+
+    if output_unit is None:
+        output_unit = unit
+    scalar = unit / output_unit
 
     stream.write("Total time: %g s\n" % (total_time * unit))
     if os.path.exists(filename) or filename.startswith("<ipython-input-"):
@@ -217,8 +222,10 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
     for lineno, nhits, time in timings:
-        d[lineno] = (nhits, time, '%5.1f' % (float(time) / nhits),
-            '%5.1f' % (100*time / total_time))
+        d[lineno] = (nhits,
+            '%5.1f' % (time * scalar),
+            '%5.1f' % (float(time) * scalar / nhits),
+            '%5.1f' % (100 * time / total_time) )
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
     header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
@@ -236,15 +243,20 @@ def show_func(filename, start_lineno, func_name, timings, unit, stream=None, str
         stream.write("\n")
     stream.write("\n")
 
-def show_text(stats, unit, stream=None, stripzeros=False):
+def show_text(stats, unit, output_unit=None, stream=None, stripzeros=False):
     """ Show text for the given timings.
     """
     if stream is None:
         stream = sys.stdout
 
-    stream.write('Timer unit: %g s\n\n' % unit)
+    if output_unit is not None:
+        stream.write('Timer unit: %g s\n\n' % output_unit)
+    else:
+        stream.write('Timer unit: %g s\n\n' % unit)
+
     for (fn, lineno, name), timings in sorted(stats.items()):
-        show_func(fn, lineno, name, stats[fn, lineno, name], unit, stream=stream, stripzeros=stripzeros)
+        show_func(fn, lineno, name, stats[fn, lineno, name], unit,
+            output_unit=output_unit, stream=stream, stripzeros=stripzeros)
 
 @magics_class
 class LineProfilerMagics(Magics):
@@ -284,12 +296,14 @@ class LineProfilerMagics(Magics):
         -r: return the LineProfiler object after it has completed profiling.
 
         -s: strip out all entries from the print-out that have zeros.
+
+        -u: specify time unit for the print-out in seconds.
         """
 
         # Escape quote markers.
-        opts_def = Struct(D=[''], T=[''], f=[], m=[])
+        opts_def = Struct(D=[''], T=[''], f=[], m=[], u=None)
         parameter_s = parameter_s.replace('"', r'\"').replace("'", r"\'")
-        opts, arg_str = self.parse_options(parameter_s, 'rsf:m:D:T:', list_all=True)
+        opts, arg_str = self.parse_options(parameter_s, 'rsf:m:D:T:u:', list_all=True)
         opts.merge(opts_def)
 
         global_ns = self.shell.user_global_ns
@@ -314,6 +328,14 @@ class LineProfilerMagics(Magics):
             except Exception as e:
                 raise UsageError('Could not find module %r.\n%s: %s' % (modname,
                     e.__class__.__name__, e))
+
+        if opts.u is not None:
+            try:
+                output_unit = float(opts.u[0])
+            except Exception as e:
+                raise TypeError("Timer unit setting must be a float.")
+        else:
+            output_unit = None
 
         # Add the profiler to the builtins for @profile.
         if PY3:
@@ -344,7 +366,7 @@ class LineProfilerMagics(Magics):
 
         # Trap text output.
         stdout_trap = StringIO()
-        profile.print_stats(stdout_trap, stripzeros='s' in opts)
+        profile.print_stats(stdout_trap, output_unit=output_unit, stripzeros='s' in opts)
         output = stdout_trap.getvalue()
         output = output.rstrip()
 
