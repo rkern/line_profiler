@@ -73,6 +73,11 @@ does need to be explicitly told what functions to profile. The easiest way to
 get started is to use the `kernprof` script. ::
 
     $ kernprof -l script_to_profile.py
+    
+If you running your project from virtual environment and did not install 
+module to system python: ::
+    
+    $ venv/bin/kernprof -l script_to_profile.py
 
 `kernprof` will create an instance of LineProfiler and insert it into the
 `__builtins__` namespace with the name `profile`. It has been written to be
