@@ -41,13 +41,13 @@ if sys.version_info > (3, 4):
 
 setup(
     name = 'line_profiler',
-    version = '2.0',
+    version = '2.1',
     author = 'Robert Kern',
     author_email = 'robert.kern@enthought.com',
     description = 'Line-by-line profiler.',
     long_description = long_description,
     url = 'https://github.com/rkern/line_profiler',
-    download_url = 'https://github.com/rkern/line_profiler/tarball/2.0',
+    download_url = 'https://github.com/rkern/line_profiler/tarball/2.1',
     ext_modules = [
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],

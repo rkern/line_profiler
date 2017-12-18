@@ -355,6 +355,13 @@ Bugs and pull requested can be submitted on GitHub_.
 Changes
 =======
 
+2.1
+~~~
+* ENH: Add support for Python 3.5 coroutines
+* ENH: Documentation updates
+* ENH: CI for most recent Python versions (3.5, 3.6, 3.6-dev, 3.7-dev, nightly)
+* ENH: Add timer unit argument for output time granularity spec
+
 2.0
 ~~~
 * BUG: Added support for IPython 5.0+, removed support for IPython <=0.12
