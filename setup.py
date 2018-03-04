@@ -79,7 +79,6 @@ setup(
         ],
     },
     install_requires = [
-        'IPython>=0.13',
     ],
     cmdclass = cmdclass,
 )
