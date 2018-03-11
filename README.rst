@@ -77,11 +77,21 @@ get started is to use the `kernprof` script. ::
 `kernprof` will create an instance of LineProfiler and insert it into the
 `__builtins__` namespace with the name `profile`. It has been written to be
 used as a decorator, so in your script, you decorate the functions you want
-to profile with @profile. ::
+to profile with @profile. e.g.:
 
+    from line_profiler import LineProfiler
+    import time
+    
+    profile = LineProfiler()
+    
     @profile
     def slow_function(a, b, c):
-        ...
+        time.sleep(1)
+        return a+b+c
+    
+    if __name__ == '__main__':
+        slow_function(1, 2, 3)
+        profile.print_stats()
 
 The default behavior of `kernprof` is to put the results into a binary file
 script_to_profile.py.lprof . You can tell `kernprof` to immediately view the
