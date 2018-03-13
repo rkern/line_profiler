@@ -1,1 +1,1 @@
-void unset_trace();
+void unset_trace(void);
