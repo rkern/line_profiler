@@ -39,6 +39,11 @@ py_modules = ['line_profiler', 'kernprof']
 if sys.version_info > (3, 4):
     py_modules += ['line_profiler_py35']
 
+if sy.version_info[0] > 2:
+    install_requires = ['IPython>=0.13']
+else:
+    install_requires = ['IPython>=0.13,<6']
+
 setup(
     name = 'line_profiler',
     version = '2.1.1',
@@ -78,8 +83,6 @@ setup(
             'kernprof=kernprof:main',
         ],
     },
-    install_requires = [
-        'IPython>=0.13',
-    ],
+    install_requires=install_requires,
     cmdclass = cmdclass,
 )
