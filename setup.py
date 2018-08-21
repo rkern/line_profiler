@@ -39,7 +39,7 @@ py_modules = ['line_profiler', 'kernprof']
 if sys.version_info > (3, 4):
     py_modules += ['line_profiler_py35']
 
-if sy.version_info[0] > 2:
+if sys.version_info[0] > 2:
     install_requires = ['IPython>=0.13']
 else:
     install_requires = ['IPython>=0.13,<6']
