@@ -73,7 +73,7 @@ class TestKernprof(unittest.TestCase):
         self.assertEqual(profile.enable_count, 0)
         self.assertEqual(i.send(30), 50)
         self.assertEqual(profile.enable_count, 0)
-        with self.assertRaises(StopIteration):
+        with self.assertRaises((StopIteration, RuntimeError)):
             next(i)
         self.assertEqual(profile.enable_count, 0)
 

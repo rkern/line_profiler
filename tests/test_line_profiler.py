@@ -90,7 +90,7 @@ class TestLineProfiler(unittest.TestCase):
         self.assertEqual(i.send(30), 50)
         self.assertEqual(profile.enable_count, 0)
         self.assertEqual(len(timings), 2)
-        with self.assertRaises(StopIteration):
+        with self.assertRaises((StopIteration, RuntimeError)):
             next(i)
         self.assertEqual(profile.enable_count, 0)
 
