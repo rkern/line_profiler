@@ -40,14 +40,14 @@ if sys.version_info > (3, 4):
     py_modules += ['line_profiler_py35']
 
 setup(
-    name = 'line_profiler',
+    name = 'lp37',
     version = '2.1.1',
     author = 'Robert Kern',
     author_email = 'robert.kern@enthought.com',
-    description = 'Line-by-line profiler.',
+    description = 'Line-by-line profiler. Fork with Python 3.7 compatibility.',
     long_description = long_description,
-    url = 'https://github.com/rkern/line_profiler',
-    download_url = 'https://github.com/rkern/line_profiler/tarball/2.1',
+    url = 'https://github.com/simonpercivall/line_profiler',
+    download_url = 'https://github.com/simonpercivall/line_profiler/tarball/2.1',
     ext_modules = [
         Extension('_line_profiler',
                   sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],

@@ -1,6 +1,8 @@
 line_profiler and kernprof
 --------------------------
 
+This is a minimal fork to add Python 3.7 compatibility.
+
 `line_profiler` is a module for doing line-by-line profiling of functions.
 kernprof is a convenient script for running either `line_profiler` or the Python
 standard library's cProfile or profile modules, depending on what is available.
