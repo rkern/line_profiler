@@ -1,3 +1,4 @@
+# cython: language_level=2
 from python25 cimport PyFrameObject, PyObject, PyStringObject
 
 
