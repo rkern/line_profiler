@@ -1,5 +1,8 @@
 import sys
 
+# Monkeypatch distutils.
+import setuptools
+
 import distutils.errors
 from distutils.core import setup
 from distutils.extension import Extension
