@@ -41,7 +41,7 @@ if sys.version_info > (3, 4):
 
 setup(
     name = 'line_profiler',
-    version = '2.1.3.dev',
+    version = '2.1.3.dev0',
     author = 'Robert Kern',
     author_email = 'robert.kern@enthought.com',
     description = 'Line-by-line profiler.',
