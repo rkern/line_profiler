@@ -15,6 +15,14 @@ They are available under a `BSD license`_.
 Installation
 ============
 
+**Note:** As of version 2.1.2, `pip install line_profiler` does not work.
+Please install as follows until it is fixed in the next release::
+    
+    git clone https://github.com/rkern/line_profiler.git
+    find line_profiler -name '*.pyx' -exec cython {} \;
+    cd line_profiler
+    pip install . --user 
+
 Releases of `line_profiler` can be installed using pip::
 
     $ pip install line_profiler
