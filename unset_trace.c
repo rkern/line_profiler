@@ -2,6 +2,6 @@
 
 #include "Python.h"
 
-void unset_trace() {
+void unset_trace(void) {
     PyEval_SetTrace(NULL, NULL);
 }
