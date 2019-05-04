@@ -225,7 +225,7 @@ def show_func(filename, start_lineno, func_name, timings, unit,
         d[lineno] = (nhits,
             '%5.1f' % (time * scalar),
             '%5.1f' % (float(time) * scalar / nhits),
-            '%5.1f' % (100 * time / total_time) )
+            '%5.1f' % (100 * time / (total_time + 1e-6)) )
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
     header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
