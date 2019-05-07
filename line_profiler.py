@@ -239,7 +239,7 @@ def show_func(filename, start_lineno, func_name, timings, unit,
         nhits, time, per_hit, percent = d.get(lineno, empty)
         txt = template % (lineno, nhits, time, per_hit, percent,
                           line.rstrip('\n').rstrip('\r'))
-        stream.write(txt)
+        stream.write(txt.encode(sys.stdout.encoding))
         stream.write("\n")
     stream.write("\n")
 
