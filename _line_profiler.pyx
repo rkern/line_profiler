@@ -1,5 +1,6 @@
 from python25 cimport PyFrameObject, PyObject, PyStringObject
 
+import threading
 
 cdef extern from "frameobject.h":
     ctypedef int (*Py_tracefunc)(object self, PyFrameObject *py_frame, int what, PyObject *arg)
@@ -108,14 +109,14 @@ cdef class LineProfiler:
     cdef public dict code_map
     cdef public dict last_time
     cdef public double timer_unit
-    cdef public long enable_count
+    cdef public object threaddata
 
     def __init__(self, *functions):
         self.functions = []
         self.code_map = {}
         self.last_time = {}
         self.timer_unit = hpTimerUnit()
-        self.enable_count = 0
+        self.threaddata = threading.local()
         for func in functions:
             self.add_function(func)
 
@@ -131,6 +132,14 @@ cdef class LineProfiler:
         if code not in self.code_map:
             self.code_map[code] = {}
             self.functions.append(func)
+
+    property enable_count:
+        def __get__(self):
+            if not hasattr(self.threaddata, 'enable_count'):
+                self.threaddata.enable_count = 0
+            return self.threaddata.enable_count
+        def __set__(self, value):
+            self.threaddata.enable_count = value
 
     def enable_by_count(self):
         """ Enable the profiler if it hasn't been enabled before.
