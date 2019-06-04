@@ -92,14 +92,14 @@ to profile with @profile. ::
         ...
 
 The default behavior of `kernprof` is to put the results into a binary file
-script_to_profile.py.lprof . You can tell `kernprof` to immediately view the
-formatted results at the terminal with the [-v/--view] option. Otherwise, you
+`script_to_profile.py.lprof`. You can tell `kernprof` to immediately view the
+formatted results at the terminal with the `[-v/--view]` option. Otherwise, you
 can view the results later like so::
 
     $ python -m line_profiler script_to_profile.py.lprof
 
 For example, here are the results of profiling a single function from
-a decorated version of the pystone.py benchmark (the first two lines are output
+a decorated version of the `pystone.py` benchmark (the first two lines are output
 from `pystone.py`, not `kernprof`)::
 
     Pystone(1.1) time for 50000 passes = 2.48
@@ -127,7 +127,7 @@ from `pystone.py`, not `kernprof`)::
 
 
 The source code of the function is printed with the timing information for each
-line. There are six columns of information.
+line. There are six columns of information:
 
     * Line #: The line number in the file.
 
@@ -150,13 +150,13 @@ line. There are six columns of information.
       match up, and the formatter may not even be able to locate the function
       for display.
 
-If you are using IPython, there is an implementation of an %lprun magic command
+If you are using IPython, there is an implementation of an `%lprun` magic command
 which will let you specify functions to profile and a statement to execute. It
-will also add its LineProfiler instance into the __builtins__, but typically,
+will also add its LineProfiler instance into the `__builtins__`, but typically,
 you would not use it like that.
 
 For IPython 0.11+, you can install it by editing the IPython configuration file
-`~/.ipython/profile_default/ipython_config.py` to add the `'line_profiler'`
+`~/.ipython/profile_default/ipython_config.py` and adding the `'line_profiler'`
 item to the extensions list::
 
     c.TerminalIPythonApp.extensions = [
@@ -164,7 +164,7 @@ item to the extensions list::
     ]
 
 
-To get usage help for %lprun, use the standard IPython help mechanism::
+To get usage help for `%lprun`, use the standard IPython help mechanism::
 
     In [1]: %lprun?
 
@@ -178,7 +178,7 @@ the constructor or use the `add_function(f)` method after instantiation. ::
     profile.add_function(h)
 
 LineProfiler has the same `run()`, `runctx()`, and `runcall()` methods as
-cProfile.Profile as well as `enable()` and `disable()`. It should be noted,
+`cProfile.Profile` as well as `enable()` and `disable()`. It should be noted,
 though, that `enable()` and `disable()` are not entirely safe when nested.
 Nesting is common when using LineProfiler as a decorator. In order to support
 nesting, use `enable_by_count()` and `disable_by_count()`. These functions will
@@ -187,7 +187,7 @@ profiler when the count transitions from or to 0.
 
 After profiling, the `dump_stats(filename)` method will pickle the results out
 to the given file. `print_stats([stream])` will print the formatted results to
-sys.stdout or whatever stream you specify. `get_stats()` will return LineStats
+`sys.stdout` or whatever stream you specify. `get_stats()` will return LineStats
 object, which just holds two attributes: a dictionary containing the results and
 the timer unit.
 
@@ -195,42 +195,42 @@ the timer unit.
 kernprof
 ========
 
-`kernprof` also works with cProfile, its third-party incarnation lsprof, or the
+`kernprof` also works with cProfile, its third-party incarnation `lsprof`, or the
 pure-Python profile module depending on what is available. It has a few main
 features:
 
     * Encapsulation of profiling concerns. You do not have to modify your script
       in order to initiate profiling and save the results. Unless if you want to
-      use the advanced __builtins__ features, of course.
+      use the advanced `__builtins__` features, of course.
 
-    * Robust script execution. Many scripts require things like __name__,
-      __file__, and sys.path to be set relative to it. A naive approach at
-      encapsulation would just use execfile(), but many scripts which rely on
-      that information will fail. kernprof will set those variables correctly
+    * Robust script execution. Many scripts require things like `__name__`,
+      `__file__`, and `sys.path` to be set relative to it. A naive approach at
+      encapsulation would just use `execfile()`, but many scripts that rely on
+      that information will fail. `kernprof` will set those variables correctly
       before executing the script.
 
     * Easy executable location. If you are profiling an application installed on
-      your PATH, you can just give the name of the executable. If kernprof does
+      your PATH, you can just give the name of the executable. If `kernprof` does
       not find the given script in the current directory, it will search your
       PATH for it.
 
-    * Inserting the profiler into __builtins__. Sometimes, you just want to
-      profile a small part of your code. With the [-b/--builtin] argument, the
-      Profiler will be instantiated and inserted into your __builtins__ with the
+    * Inserting the profiler into `__builtins__`. Sometimes, you just want to
+      profile a small part of your code. With the `[-b/--builtin]` argument, the
+      Profiler will be instantiated and inserted into your `__builtins__` with the
       name "profile". Like LineProfiler, it may be used as a decorator, or
       enabled/disabled with `enable_by_count()` and `disable_by_count()`, or
       even as a context manager with the "with profile:" statement.
 
-    * Pre-profiling setup. With the [-s/--setup] option, you can provide
+    * Pre-profiling setup. With the `[-s/--setup]` option, you can provide
       a script which will be executed without profiling before executing the
       main script. This is typically useful for cases where imports of large
       libraries like wxPython or VTK are interfering with your results. If you
-      can modify your source code, the __builtins__ approach may be
+      can modify your source code, the `__builtins__` approach may be
       easier.
 
-The results of profile script_to_profile.py will be written to
-script_to_profile.py.prof by default. It will be a typical marshalled file that
-can be read with pstats.Stats(). They may be interactively viewed with the
+The results of profile `script_to_profile.py` will be written to
+`script_to_profile.py.prof` by default. It will be a typical marshalled file that
+can be read with `pstats.Stats()`. The statistics may be interactively viewed with the
 command::
 
     $ python -m pstats script_to_profile.py.prof
@@ -264,7 +264,7 @@ Frequently Asked Questions
 
 * Why not allow using hotshot from kernprof.py?
 
-    I don't use hotshot, myself. I will accept contributions in this vein,
+    I don't use hotshot myself. I will accept contributions in this vein,
     though.
 
 * The line-by-line timings don't add up when one profiled function calls
@@ -343,7 +343,7 @@ Frequently Asked Questions
 To Do
 =====
 
-cProfile uses a neat "rotating trees" data structure to minimize the overhead of
+cProfile uses a neat *rotating trees* data structure to minimize the overhead of
 looking up and recording entries. LineProfiler uses Python dictionaries and
 extension objects thanks to Cython. This mostly started out as a prototype that
 I wanted to play with as quickly as possible, so I passed on stealing the
