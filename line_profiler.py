@@ -236,11 +236,12 @@ def show_func(filename, start_lineno, func_name, timings, unit,
     stream.write('=' * len(header))
     stream.write("\n")
     for lineno, line in zip(linenos, sublines):
-        nhits, time, per_hit, percent = d.get(lineno, empty)
-        txt = template % (lineno, nhits, time, per_hit, percent,
-                          line.rstrip('\n').rstrip('\r'))
-        stream.write(txt)
-        stream.write("\n")
+        if lineno in d:
+            nhits, time, per_hit, percent = d.get(lineno, empty)
+            txt = template % (lineno, nhits, time, per_hit, percent,
+                              line.rstrip('\n').rstrip('\r'))
+            stream.write(txt)
+            stream.write("\n")
     stream.write("\n")
 
 def show_text(stats, unit, output_unit=None, stream=None, stripzeros=False):
