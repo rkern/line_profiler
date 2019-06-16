@@ -355,7 +355,7 @@ now. Maybe later. Contributions accepted!
 Bugs and Such
 =============
 
-Bugs and pull requested can be submitted on GitHub_.
+Bugs and pull requests can be submitted on GitHub_.
 
 .. _GitHub: https://github.com/rkern/line_profiler
 
