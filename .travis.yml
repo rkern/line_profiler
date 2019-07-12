@@ -12,6 +12,7 @@ matrix:
   allow_failures:
     - python: "nightly"
     - python: "3.8-dev"
+    - python: "3.7"
 install:
   - pip install --install-option='--no-cython-compile' Cython
   - pip install -r dev_requirements.txt
