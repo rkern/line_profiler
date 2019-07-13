@@ -1,19 +1,17 @@
+dist: xenial
 language: python
 python:
   - "nightly"
-  - "3.7-dev"
-  - "3.6-dev"
+  - "3.8-dev"
+  - "3.7"
   - "3.6"
   - "3.5"
-  - "3.4"
-  - "3.3"
   - "2.7"
 matrix:
   fast_finish: true
   allow_failures:
     - python: "nightly"
-    - python: "3.7-dev"
-    - python: "3.6-dev"
+    - python: "3.8-dev"
 install:
   - pip install --install-option='--no-cython-compile' Cython
   - pip install -r dev_requirements.txt
