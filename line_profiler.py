@@ -92,6 +92,8 @@ class LineProfiler(CLineProfiler):
             self.enable_by_count()
             try:
                 item = next(g)
+            except StopIteration:
+                return
             finally:
                 self.disable_by_count()
             input = (yield item)
