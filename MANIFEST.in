@@ -5,4 +5,5 @@ include python25.pxd
 include timers.h
 include _line_profiler.c
 include unset_trace.h
+include pyproject.toml
 recursive-include tests *.py
