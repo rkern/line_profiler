@@ -1,5 +1,20 @@
-dist: xenial
+
+#env:
+#    global:
+#        - secure: "ENCRYPTME"
+
+
 language: python
+sudo: false
+
+cache:
+  apt: true
+  directories:
+  - $HOME/.cache/pip
+  - $HOME/download
+  - $HOME/.pip-cache
+  - $HOME/gpg_install_prefix
+
 python:
   - "nightly"
   - "3.8"
@@ -7,17 +22,174 @@ python:
   - "3.6"
   - "3.5"
   - "2.7"
+
 matrix:
   fast_finish: true
   allow_failures:
     - python: "nightly"
+
+before_install:
+  - pip install pip -U
+  - pip install -r requirements.txt 
+  - docker pull quay.io/erotemic/manylinux-for:x86_64-opencv4.1.0-v2
+
 install:
-  - pip install --install-option='--no-cython-compile' Cython
-  - pip install -r dev_requirements.txt
-  - python setup.py develop
-script:
-  - python -m unittest discover -v tests
-notifications:
-  email:
-      - brett.olsen+travis-ci@gmail.com
-      - robert.kern+travis-ci@gmail.com
+  - | 
+      MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
+      VERSION=$(python -c "import setup; print(setup.VERSION)") 
+      echo "VERSION = $VERSION"
+      echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
+  - MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_multibuild.sh
+  - |
+      BDIST_WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)
+      echo "BDIST_WHEEL_PATH = $BDIST_WHEEL_PATH"
+  - pip install $BDIST_WHEEL_PATH
+    
+script: 
+  - travis_wait ./run_doctests.sh
+
+after_success: 
+    - codecov 
+    - gpg --version
+    - gpg2 --version
+    - export GPG_EXECUTABLE=gpg2
+    - openssl version
+    - | 
+        __heredoc__='''
+        # Load or generate secrets
+        source $(secret_loader.sh)
+        echo $TWINE_USERNAME
+        echo $TWINE_PASSWORD
+        echo $CI_GITHUB_SECRET
+
+        # encrypt relevant travis variables
+        travis encrypt TWINE_USERNAME=$TWINE_USERNAME 
+        travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD  
+        travis encrypt CI_GITHUB_SECRET=$CI_GITHUB_SECRET
+
+        # HOW TO ENCRYPT YOUR SECRET GPG KEY
+        IDENTIFIER="travis-ci-Erotemic"
+        KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+        echo "KEYID = $KEYID"
+
+        # Export plaintext gpg public keys, private keys, and trust info
+        mkdir -p dev
+        gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
+        gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
+        gpg --export-ownertrust > dev/gpg_owner_trust
+
+        # Encrypt gpg keys and trust with travis secret
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
+
+        source $(secret_unloader.sh)
+
+        # Look at what we did, clean up, and add it to git
+        ls dev/*.enc
+        rm dev/gpg_owner_trust dev/*.pgp
+        git status
+        git add dev/*.enc
+
+        '''  # <hack vim "regex" parser> '
+    - |
+        # Install a more recent version of GPG
+        # https://gnupg.org/download/
+        export GPG_INSTALL_PREFIX=$HOME/gpg_install_prefix
+        export LD_LIBRARY_PATH=$GPG_INSTALL_PREFIX/lib:$LD_LIBRARY_PATH
+        export PATH=$GPG_INSTALL_PREFIX/bin:$PATH
+        export CPATH=$GPG_INSTALL_PREFIX/include:$CPATH
+        export GPG_EXECUTABLE=$GPG_INSTALL_PREFIX/bin/gpg
+        ls $GPG_INSTALL_PREFIX
+        ls $GPG_INSTALL_PREFIX/bin || echo "no bin"
+        if [[ ! -f "$GPG_INSTALL_PREFIX/bin/gpg" ]]; then
+            # try and have travis cache this
+            mkdir -p $GPG_INSTALL_PREFIX
+            echo $GPG_INSTALL_PREFIX
+            OLD=$(pwd)
+            cd $GPG_INSTALL_PREFIX
+            pip install ubelt
+
+            ERROR_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.36.tar.bz2',
+                hash_prefix='6e5f853f77dc04f0091d94b224cab8e669042450f271b78d0ea0219',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            GCRYPT_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.8.5.tar.bz2',
+                hash_prefix='b55e16e838d1b1208e7673366971ae7c0f9c1c79e042f41c03d1',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            KSBA_CRYPT_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/libksba/libksba-1.3.5.tar.bz2',
+                hash_prefix='60179bfd109b7b4fd8d2b30a3216540f03f5a13620d9a5b63f1f95',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            ASSUAN_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.3.tar.bz2',
+                hash_prefix='e7ccb651ea75b07b2e687d48d86d0ab83cba8e2af7f30da2aec',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            NTBLTLS_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/ntbtls/ntbtls-0.1.2.tar.bz2',
+                hash_prefix='54468208359dc88155b14cba37773984d7d6f0f37c7a4ce13868d',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            NPTH_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2',
+                hash_prefix='2ed1012e14a9d10665420b9a23628be7e206fd9348111ec751349b',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+            GPG_FPATH=$(python -c "import ubelt as ub; print(ub.grabdata(
+                'https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.2.17.tar.bz2',
+                hash_prefix='a3cd094addac62b4b4ec1683005a2bec761ea2aacf6daf904316b',
+                dpath=ub.ensuredir('$HOME/.pip-cache'), verbose=0))")
+
+            tar xjf $ERROR_FPATH
+            tar xjf $GCRYPT_FPATH
+            tar xjf $KSBA_CRYPT_FPATH
+            tar xjf $ASSUAN_FPATH
+            tar xjf $NTBLTLS_FPATH
+            tar xjf $NPTH_FPATH
+            tar xjf $GPG_FPATH
+            (cd libgpg-error-1.36 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd libgcrypt-1.8.5 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd libksba-1.3.5 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd libassuan-2.5.3 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd ntbtls-0.1.2 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd npth-1.6 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            (cd gnupg-2.2.17 && ./configure --prefix=$GPG_INSTALL_PREFIX && make install)
+            echo "GPG_EXECUTABLE = '$GPG_EXECUTABLE'"
+            cd $OLD
+        fi
+    # Decrypt and import GPG Keys / trust
+    - $GPG_EXECUTABLE --version
+    - openssl version
+    - $GPG_EXECUTABLE --list-keys
+    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - $GPG_EXECUTABLE --list-keys
+    - MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
+    - VERSION=$(python -c "import setup; print(setup.VERSION)") 
+    - |
+        pip install twine
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          pip install six pyopenssl ndg-httpsclient pyasn1 -U --user
+          pip install requests[security] twine --user
+        elfi
+        if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+          pip install six twine
+          pip install --upgrade pyOpenSSL
+        fi
+    # Package and publish to pypi (if on release)
+    - |
+        echo "TRAVIS_BRANCH = $TRAVIS_BRANCH"
+        if [[ "$TRAVIS_BRANCH" == "release" ]]; then
+            # use set +x to log all intermediate commands 
+            set +x
+            export CURRENT_BRANCH=$TRAVIS_BRANCH
+            # TODO: reliable and secure gpg keys
+            # Relies on a specific environmenmt being available 
+            git config --global user.signingkey D297D757
+            git config --local user.signingkey D297D757
+            # git config --global gpg.program
+            MB_PYTHON_TAG=$MB_PYTHON_TAG GPG_KEYID=D297D757 CURRENT_BRANCH=$TRAVIS_BRANCH TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
+            set -x
+        else
+            MB_PYTHON_TAG=$MB_PYTHON_TAG GPG_KEYID=D297D757 CURRENT_BRANCH=$TRAVIS_BRANCH TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh
+        fi
