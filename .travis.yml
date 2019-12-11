@@ -58,14 +58,14 @@ after_success:
         __heredoc__='''
         # Load or generate secrets
         source $(secret_loader.sh)
-        echo $TWINE_USERNAME
-        echo $TWINE_PASSWORD
-        echo $CI_GITHUB_SECRET
+        echo $PYUTILS_TWINE_USERNAME
+        echo $PYUTILS_TWINE_PASSWORD
+        echo $PYUTILS_CI_GITHUB_SECRET
 
         # encrypt relevant travis variables
-        travis encrypt TWINE_USERNAME=$TWINE_USERNAME 
-        travis encrypt TWINE_PASSWORD=$TWINE_PASSWORD  
-        travis encrypt CI_GITHUB_SECRET=$CI_GITHUB_SECRET
+        travis encrypt PYUTILS_TWINE_USERNAME=$PYUTILS_TWINE_USERNAME 
+        travis encrypt PYUTILS_TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD  
+        travis encrypt PYUTILS_CI_GITHUB_SECRET=$PYUTILS_CI_GITHUB_SECRET
 
         # HOW TO ENCRYPT YOUR SECRET GPG KEY
         IDENTIFIER="travis-ci-Erotemic"
@@ -79,9 +79,9 @@ after_success:
         gpg --export-ownertrust > dev/gpg_owner_trust
 
         # Encrypt gpg keys and trust with travis secret
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
+        TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
+        TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
+        TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
 
         source $(secret_unloader.sh)
 
@@ -160,9 +160,9 @@ after_success:
     - $GPG_EXECUTABLE --version
     - openssl version
     - $GPG_EXECUTABLE --list-keys
-    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-    - TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+    - TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+    - TSP=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -d -a -in dev/travis_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
     - $GPG_EXECUTABLE --list-keys
     - MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
     - VERSION=$(python -c "import setup; print(setup.VERSION)") 
@@ -188,8 +188,19 @@ after_success:
             git config --global user.signingkey D297D757
             git config --local user.signingkey D297D757
             # git config --global gpg.program
-            MB_PYTHON_TAG=$MB_PYTHON_TAG GPG_KEYID=D297D757 CURRENT_BRANCH=$TRAVIS_BRANCH TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=yes ./publish.sh
+            #
+            TAG_AND_UPLOAD=yes
             set -x
         else
-            MB_PYTHON_TAG=$MB_PYTHON_TAG GPG_KEYID=D297D757 CURRENT_BRANCH=$TRAVIS_BRANCH TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE USE_GPG=True DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh
+            TAG_AND_UPLOAD=no
         fi
+        MB_PYTHON_TAG=$MB_PYTHON_TAG \
+            USE_GPG=True \
+            GPG_KEYID=D297D757 \
+            CURRENT_BRANCH=$TRAVIS_BRANCH \
+            TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD \
+            TWINE_USERNAME=$PYUTILS_TWINE_USERNAME \
+            GPG_EXECUTABLE=$GPG_EXECUTABLE \
+            DEPLOY_BRANCH=release \
+            TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
+        ./publish.sh

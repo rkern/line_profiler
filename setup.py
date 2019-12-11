@@ -6,7 +6,6 @@ import sys
 import setuptools  # NOQA
 import distutils.errors
 # from distutils.core import setup
-from setuptools import setup
 from distutils.extension import Extension
 from distutils.log import warn
 
@@ -151,21 +150,45 @@ def native_mb_python_tag():
 
 
 # Monkeypatch distutils.
+USE_SKBUILD = True
 
-try:
-    from Cython.Distutils import build_ext
-    cmdclass = dict(build_ext=build_ext)
-    line_profiler_source = '_line_profiler.pyx'
-except ImportError:
-    cmdclass = {}
-    line_profiler_source = '_line_profiler.c'
-    if not os.path.exists(line_profiler_source):
-        raise distutils.errors.DistutilsError("""\
-You need Cython to build the line_profiler from a git checkout, or
-alternatively use a release tarball from PyPI to build it without Cython.""")
-    else:
-        warn("Could not import Cython. "
-             "Using the available pre-generated C file.")
+if USE_SKBUILD:
+    from skbuild import setup
+    setupkw = dict(
+        # include_package_data=False,
+        package_dir={
+            '': '.',
+            # Note: this requires that FLANN_LIB_INSTALL_DIR is set to pyflann/lib
+            # in the src/cpp/CMakeLists.txt
+            # 'line_profiler.lib': 'line_profiler/lib',
+        },
+    )
+else:
+    from setuptools import setup
+    # use setuptools
+    try:
+        from Cython.Distutils import build_ext
+        cmdclass = dict(build_ext=build_ext)
+        line_profiler_source = '_line_profiler.pyx'
+    except ImportError:
+        cmdclass = {}
+        line_profiler_source = '_line_profiler.c'
+        if not os.path.exists(line_profiler_source):
+            raise distutils.errors.DistutilsError("""\
+    You need Cython to build the line_profiler from a git checkout, or
+    alternatively use a release tarball from PyPI to build it without Cython.""")
+        else:
+            warn("Could not import Cython. "
+                 "Using the available pre-generated C file.")
+
+    setupkw = dict(
+        cmdclass=cmdclass,
+        ext_modules=[
+            Extension('_line_profiler',
+                      sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
+                      depends=['python25.pxd']),
+        ],
+    )
 
 long_description = """\
 line_profiler will profile the time individual lines of code take to execute.
@@ -195,11 +218,6 @@ if __name__ == '__main__':
         description='Line-by-line profiler.',
         long_description=long_description,
         url='https://github.com/pyutils/line_profiler',
-        ext_modules=[
-            Extension('_line_profiler',
-                      sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
-                      depends=['python25.pxd']),
-        ],
         license="BSD",
         keywords=['timing', 'timer', 'profiling', 'profiler', 'line_profiler'],
         classifiers=[
@@ -230,5 +248,5 @@ if __name__ == '__main__':
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
         },
-        cmdclass=cmdclass,
+        **setupkw
     )
