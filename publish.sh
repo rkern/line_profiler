@@ -26,6 +26,7 @@ Usage:
 
     source $(secret_loader.sh)
 
+    MB_PYTHON_TAG=cp38-cp38m 
     MB_PYTHON_TAG=cp37-cp37m 
     MB_PYTHON_TAG=cp36-cp36m 
     MB_PYTHON_TAG=cp35-cp35m 
@@ -52,7 +53,7 @@ DEPLOY_BRANCH=${DEPLOY_BRANCH:=release}
 DEPLOY_REMOTE=${DEPLOY_REMOTE:=origin}
 NAME=${NAME:=$(python -c "import setup; print(setup.NAME)")}
 VERSION=$(python -c "import setup; print(setup.VERSION)")
-MB_PYTHON_TAG=${MB_PYTHON_TAG:=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")}
+MB_PYTHON_TAG=${MB_PYTHON_TAG:=$(python -c "import setup; print(setup.native_mb_python_tag())")}
 
 check_variable CURRENT_BRANCH
 check_variable DEPLOY_BRANCH
@@ -105,11 +106,11 @@ if [[ "$MODE" == "sdist" ]]; then
     WHEEL_PATHS+=($WHEEL_PATH)
 elif [[ "$MODE" == "universal" ]]; then
     python setup.py bdist_wheel --universal
-    WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)
+    WHEEL_PATH=$(ls dist/$NAME-$VERSION-$MB_PYTHON_TAG*.whl)
     WHEEL_PATHS+=($WHEEL_PATH)
 elif [[ "$MODE" == "bdist" ]]; then
     echo "Assume wheel has already been built"
-    WHEEL_PATH=$(ls wheelhouse/*-$VERSION-$MB_PYTHON_TAG*.whl)
+    WHEEL_PATH=$(ls wheelhouse/$NAME-$VERSION-$MB_PYTHON_TAG*.whl)
     WHEEL_PATHS+=($WHEEL_PATH)
 elif [[ "$MODE" == "all" ]]; then
     python setup.py sdist 
@@ -117,20 +118,23 @@ elif [[ "$MODE" == "all" ]]; then
     WHEEL_PATHS+=($WHEEL_PATH)
 
     python setup.py bdist_wheel --universal
-    WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)
+    WHEEL_PATH=$(ls dist/$NAME-$VERSION-py2.py3-none-any.whl)
     WHEEL_PATHS+=($WHEEL_PATH)
 
-    WHEEL_PATH=$(ls wheelhouse/*-$VERSION-$MB_PYTHON_TAG*.whl)
+    # this should have been made by multibuild
+    WHEEL_PATH=$(ls wheelhouse/$NAME-$VERSION-$MB_PYTHON_TAG*.whl)
     WHEEL_PATHS+=($WHEEL_PATH)
 else
     echo "bad mode"
     exit 1
 fi
 
+WHEEL_PATHS_STR=$(printf '%s\n' "${WHEEL_PATHS[@]}")
+
 echo "
 MODE=$MODE
 VERSION='$VERSION'
-WHEEL_PATHS='$WHEEL_PATHS'
+WHEEL_PATHS='$WHEEL_PATHS_STR'
 "
 
 echo "
@@ -222,7 +226,7 @@ else
         DEPLOY_BRANCH = '$DEPLOY_BRANCH'
         TAG_AND_UPLOAD = '$TAG_AND_UPLOAD'
         WHEEL_PATH = '$WHEEL_PATH'
-        WHEEL_PATHS = '$WHEEL_PATHS'
+        WHEEL_PATHS = '$WHEEL_PATHS_STR'
 
         To do live run set TAG_AND_UPLOAD=yes and ensure deploy and current branch are the same
 

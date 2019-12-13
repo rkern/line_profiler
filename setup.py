@@ -4,10 +4,7 @@ from os.path import exists
 import os
 import sys
 import setuptools  # NOQA
-import distutils.errors
-# from distutils.core import setup
-from distutils.extension import Extension
-from distutils.log import warn
+from setuptools import find_packages
 
 
 def parse_version(fpath):
@@ -142,28 +139,43 @@ def native_mb_python_tag():
             else:
                 abi = 'm'
         else:
-            abi = 'm'
+            if ver == '38':
+                # no abi in 38?
+                abi = ''
+            else:
+                abi = 'm'
     else:
         raise NotImplementedError(impl)
     mb_tag = '{impl}{ver}-{impl}{ver}{abi}'.format(**locals())
     return mb_tag
 
 
-# Monkeypatch distutils.
 USE_SKBUILD = True
-
 if USE_SKBUILD:
-    from skbuild import setup
+
+    if '--universal' in sys.argv:
+        # Dont use scikit-build for universal wheels
+        if 'develop' in sys.argv:
+            sys.argv.remove('--universal')
+        from setuptools import setup
+    else:
+        from skbuild import setup
+
     setupkw = dict(
         # include_package_data=False,
-        package_dir={
-            '': '.',
-            # Note: this requires that FLANN_LIB_INSTALL_DIR is set to pyflann/lib
-            # in the src/cpp/CMakeLists.txt
-            # 'line_profiler.lib': 'line_profiler/lib',
-        },
+        # package_dir={
+        #     '': '.',
+        #     # Note: this requires that FLANN_LIB_INSTALL_DIR is set to pyflann/lib
+        #     # in the src/cpp/CMakeLists.txt
+        #     # 'line_profiler.lib': 'line_profiler/lib',
+        # },
     )
 else:
+    # Monkeypatch distutils.
+    import distutils.errors
+    # from distutils.core import setup
+    from distutils.extension import Extension
+    from distutils.log import warn
     from setuptools import setup
     # use setuptools
     try:
@@ -200,23 +212,25 @@ profile Python applications and scripts either with line_profiler or with the
 function-level profiling tools in the Python standard library.
 """
 
-VERSION = parse_version('line_profiler.py')
+VERSION = parse_version('line_profiler/__init__.py')
 NAME = 'line_profiler'
+MB_PYTHON_TAG = native_mb_python_tag()
 
 
-py_modules = ['line_profiler', 'kernprof']
-if sys.version_info > (3, 4):
-    py_modules += ['line_profiler_py35']
+# py_modules = ['line_profiler', 'kernprof']
+# if sys.version_info > (3, 4):
+#     py_modules += ['line_profiler_py35']
 
 
 if __name__ == '__main__':
-    setup(
+    setupkw.update(dict(
         name=NAME,
         version=VERSION,
         author='Robert Kern',
         author_email='robert.kern@enthought.com',
         description='Line-by-line profiler.',
         long_description=long_description,
+        long_description_content_type='text/x-rst',
         url='https://github.com/pyutils/line_profiler',
         license="BSD",
         keywords=['timing', 'timer', 'profiling', 'profiler', 'line_profiler'],
@@ -233,10 +247,15 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.2',
             'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: Implementation :: CPython',
             "Topic :: Software Development",
         ],
-        py_modules=py_modules,
+        # py_modules=find_packages(),
+        packages=list(find_packages()),
+        py_modules=['kernprof', 'line_profiler'],
         entry_points={
             'console_scripts': [
                 'kernprof=kernprof:main',
@@ -246,7 +265,7 @@ if __name__ == '__main__':
         extras_require={
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
-            'optional': parse_requirements('requirements/optional.txt'),
+            'build': parse_requirements('requirements/build.txt'),
         },
-        **setupkw
-    )
+    ))
+    setup(**setupkw)

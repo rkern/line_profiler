@@ -73,7 +73,8 @@ class TestKernprof(unittest.TestCase):
         self.assertEqual(profile.enable_count, 0)
         self.assertEqual(i.send(30), 50)
         self.assertEqual(profile.enable_count, 0)
-        with self.assertRaises(StopIteration):
+
+        with self.assertRaises((StopIteration, RuntimeError)):
             next(i)
         self.assertEqual(profile.enable_count, 0)
 
@@ -82,4 +83,8 @@ class TestKernprof(unittest.TestCase):
         test_coroutine_decorator = _test_kernprof_py35.test_coroutine_decorator
 
 if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/code/line_profiler/tests/test_kernprof.py
+    """
     unittest.main()
