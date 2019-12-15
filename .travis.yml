@@ -10,7 +10,6 @@ env:
 
 
 language: python
-sudo: false
 
 cache:
   apt: true
@@ -28,7 +27,7 @@ python:
   - "3.8"
   - "nightly"
 
-matrix:
+jobs:
   fast_finish: true
   allow_failures:
     - python: "nightly"
