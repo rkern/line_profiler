@@ -1,4 +1,4 @@
-from python25 cimport PyFrameObject, PyObject, PyStringObject
+from .python25 cimport PyFrameObject, PyObject, PyStringObject
 
 
 cdef extern from "frameobject.h":

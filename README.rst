@@ -1,13 +1,15 @@
 line_profiler and kernprof
 --------------------------
 
+|Pypi| |Downloads| |Travis|
+
 `line_profiler` is a module for doing line-by-line profiling of functions.
 kernprof is a convenient script for running either `line_profiler` or the Python
 standard library's cProfile or profile modules, depending on what is available.
 
 They are available under a `BSD license`_.
 
-.. _BSD license: https://raw.githubusercontent.com/rkern/line_profiler/master/LICENSE.txt
+.. _BSD license: https://raw.githubusercontent.com/pyutils/line_profiler/master/LICENSE.txt
 
 .. contents::
 
@@ -18,7 +20,7 @@ Installation
 **Note:** As of version 2.1.2, `pip install line_profiler` does not work.
 Please install as follows until it is fixed in the next release::
     
-    git clone https://github.com/rkern/line_profiler.git
+    git clone https://github.com/pyutils/line_profiler.git
     find line_profiler -name '*.pyx' -exec cython {} \;
     cd line_profiler
     pip install . --user 
@@ -33,7 +35,7 @@ Source releases and any binaries can be downloaded from the PyPI link.
 
 To check out the development sources, you can use Git_::
 
-    $ git clone https://github.com/rkern/line_profiler.git
+    $ git clone https://github.com/pyutils/line_profiler.git
 
 You may also download source tarballs of any snapshot from that URL.
 
@@ -357,11 +359,16 @@ Bugs and Such
 
 Bugs and pull requested can be submitted on GitHub_.
 
-.. _GitHub: https://github.com/rkern/line_profiler
+.. _GitHub: https://github.com/pyutils/line_profiler
 
 
 Changes
 =======
+
+3.0
+~~~
+* ENH: Fix Python 3.7
+* ENH: Restructure into package
 
 2.1
 ~~~
@@ -410,3 +417,19 @@ Changes
 ~~~~~
 
 * Initial release.
+
+
+.. |CircleCI| image:: https://circleci.com/gh/pyutils/line_profiler.svg?style=svg
+    :target: https://circleci.com/gh/pyutils/line_profiler
+.. |Travis| image:: https://img.shields.io/travis/pyutils/line_profiler/master.svg?label=Travis%20CI
+   :target: https://travis-ci.org/pyutils/line_profiler?branch=master
+.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/github/pyutils/line_profiler?branch=master&svg=True
+   :target: https://ci.appveyor.com/project/pyutils/line_profiler/branch/master
+.. |Codecov| image:: https://codecov.io/github/pyutils/line_profiler/badge.svg?branch=master&service=github
+   :target: https://codecov.io/github/pyutils/line_profiler?branch=master
+.. |Pypi| image:: https://img.shields.io/pypi/v/line_profiler.svg
+   :target: https://pypi.python.org/pypi/line_profiler
+.. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler.svg
+   :target: https://pypistats.org/packages/line_profiler
+.. |ReadTheDocs| image:: https://readthedocs.org/projects/line_profiler/badge/?version=latest
+    :target: http://line_profiler.readthedocs.io/en/latest/

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -22,7 +23,7 @@ from IPython.core.page import page
 from IPython.utils.ipstruct import Struct
 from IPython.core.error import UsageError
 
-from _line_profiler import LineProfiler as CLineProfiler
+from ._line_profiler import LineProfiler as CLineProfiler
 
 # Python 2/3 compatibility utils
 # ===========================================================
@@ -123,7 +124,7 @@ class LineProfiler(CLineProfiler):
         return wrapper
 
     if PY35:
-        import line_profiler_py35
+        from . import line_profiler_py35
         wrap_coroutine = line_profiler_py35.wrap_coroutine
 
     def dump_stats(self, filename):
