@@ -43,7 +43,7 @@ install:
       VERSION=$(python -c "import setup; print(setup.VERSION)") 
       echo "VERSION = $VERSION"
       echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
-  - MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_multibuild.sh
+  - MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_manylinux_build.sh
   - |
       BDIST_WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)
       echo "BDIST_WHEEL_PATH = $BDIST_WHEEL_PATH"

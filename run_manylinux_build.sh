@@ -34,11 +34,11 @@ notes:
         python run_tests.py
 
 
-MB_PYTHON_TAG=cp38-cp38 ./run_multibuild.sh
-MB_PYTHON_TAG=cp37-cp37m ./run_multibuild.sh
-MB_PYTHON_TAG=cp36-cp36m ./run_multibuild.sh
-MB_PYTHON_TAG=cp35-cp35m ./run_multibuild.sh
-MB_PYTHON_TAG=cp27-cp27m ./run_multibuild.sh
+MB_PYTHON_TAG=cp38-cp38 ./run_manylinux_build.sh
+MB_PYTHON_TAG=cp37-cp37m ./run_manylinux_build.sh
+MB_PYTHON_TAG=cp36-cp36m ./run_manylinux_build.sh
+MB_PYTHON_TAG=cp35-cp35m ./run_manylinux_build.sh
+MB_PYTHON_TAG=cp27-cp27m ./run_manylinux_build.sh
 
 # MB_PYTHON_TAG=cp27-cp27mu ./run_nmultibuild.sh
 
@@ -71,7 +71,7 @@ if [ "$_INSIDE_DOCKER" != "YES" ]; then
         -e MB_PYTHON_TAG="$MB_PYTHON_TAG" \
         -e NAME="$NAME" \
         -e VERSION="$VERSION" \
-        $DOCKER_IMAGE bash -c 'cd /io && ./run_multibuild.sh'
+        $DOCKER_IMAGE bash -c 'cd /io && ./run_manylinux_build.sh'
 
     __interactive__='''
     docker run --rm \
