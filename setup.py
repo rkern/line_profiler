@@ -214,6 +214,7 @@ function-level profiling tools in the Python standard library.
 
 VERSION = parse_version('line_profiler/__init__.py')
 MB_PYTHON_TAG = native_mb_python_tag()
+# note: name is temporary until line_profiler pypi name is transfered
 NAME = 'line_profiler_pyutils'
 
 
@@ -250,6 +251,7 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: Implementation :: CPython',
             "Topic :: Software Development",
         ],
