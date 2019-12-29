@@ -213,8 +213,8 @@ function-level profiling tools in the Python standard library.
 """
 
 VERSION = parse_version('line_profiler/__init__.py')
-NAME = 'line_profiler'
 MB_PYTHON_TAG = native_mb_python_tag()
+NAME = 'line_profiler_pyutils'
 
 
 # py_modules = ['line_profiler', 'kernprof']
