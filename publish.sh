@@ -52,8 +52,13 @@ Usage:
 
 check_variable(){
     KEY=$1
+    HIDE=$2
     VAL=${!KEY}
-    echo "[DEBUG] CHECK VARIABLE: $KEY=\"$VAL\""
+    if [[ "$HIDE" == "" ]]; then
+        echo "[DEBUG] CHECK VARIABLE: $KEY=\"$VAL\""
+    else
+        echo "[DEBUG] CHECK VARIABLE: $KEY=<hidden>"
+    fi
     if [[ "$VAL" == "" ]]; then
         echo "[ERROR] UNSET VARIABLE: $KEY=\"$VAL\""
         exit 1;
@@ -218,7 +223,7 @@ fi
 
 if [[ "$TAG_AND_UPLOAD" == "yes" ]]; then
     check_variable TWINE_USERNAME
-    check_variable TWINE_PASSWORD
+    check_variable TWINE_PASSWORD "hide"
 
     #git tag $VERSION -m "tarball tag $VERSION"
     #git push --tags $DEPLOY_REMOTE $DEPLOY_BRANCH
