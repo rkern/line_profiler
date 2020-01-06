@@ -1,6 +1,15 @@
 #!/bin/bash
 __heredoc__='''
-Script to publish a new version of this library on PyPI
+Script to publish a new version of this library on PyPI. 
+
+If your script has binary dependencies then we assume that you have built a
+proper binary wheel with auditwheel and it exists in the wheelhouse directory.
+Otherwise, for source tarballs and universal wheels this script runs the
+setup.py script to create the wheels as well.
+
+Running this script with the default arguments will perform any builds and gpg
+signing, but nothing will be uploaded to pypi unless the user explicitly sets
+TAG_AND_UPLOAD=True or answers yes to the prompts.
 
 Args:
     # These environment variables must / should be set
@@ -35,8 +44,10 @@ Usage:
     MB_PYTHON_TAG=cp27-cp27mu
 
     echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
-    MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_manylinux_build.sh
+    MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_multibuild.sh
     DEPLOY_BRANCH=master DEPLOY_REMOTE=ibeis MB_PYTHON_TAG=$MB_PYTHON_TAG ./publish.sh yes
+
+    MB_PYTHON_TAG=py2.py3-none-any ./publish.sh
 '''
 
 check_variable(){
@@ -56,6 +67,11 @@ DEPLOY_REMOTE=${DEPLOY_REMOTE:=origin}
 NAME=${NAME:=$(python -c "import setup; print(setup.NAME)")}
 VERSION=$(python -c "import setup; print(setup.VERSION)")
 MB_PYTHON_TAG=${MB_PYTHON_TAG:=$(python -c "import setup; print(setup.native_mb_python_tag())")}
+
+# The default should change depending on the application
+#DEFAULT_MODE_LIST=("sdist" "universal" "bdist")
+#DEFAULT_MODE_LIST=("sdist" "universal")
+DEFAULT_MODE_LIST=("sdist" "bdist")
 
 check_variable CURRENT_BRANCH
 check_variable DEPLOY_BRANCH
@@ -101,10 +117,7 @@ echo "LIVE BUILDING"
 MODE=${MODE:=all}
 
 if [[ "$MODE" == "all" ]]; then
-    # The default should change depending on the application
-    #MODE_LIST=("sdist" "universal" "bdist")
-    #MODE_LIST=("sdist" "universal")
-    MODE_LIST=("sdist" "bdist")
+    MODE_LIST=("${DEFAULT_MODE_LIST[@]}")
 else
     MODE_LIST=("$MODE")
 fi
@@ -121,7 +134,8 @@ do
         WHEEL_PATHS+=($WHEEL_PATH)
     elif [[ "$_MODE" == "universal" ]]; then
         python setup.py bdist_wheel --universal
-        WHEEL_PATH=$(ls dist/$NAME-$VERSION-$MB_PYTHON_TAG*.whl)
+        UNIVERSAL_TAG="py2.py3-none-any"
+        WHEEL_PATH=$(ls dist/$NAME-$VERSION-$UNIVERSAL_TAG*.whl)
         WHEEL_PATHS+=($WHEEL_PATH)
     elif [[ "$_MODE" == "bdist" ]]; then
         echo "Assume wheel has already been built"
