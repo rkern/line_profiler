@@ -8,13 +8,8 @@ NOTICE: The the original
 `line_profiler <https://github.com/rkern/line_profiler/>`_ package by  
 `@rkern <https://github.com/rkern/>`_ is currently unmaintained. This fork
 seeks to simply maintain the original code so it continues to work in new
-versions of Python. 
-We are currently working on transfering the ownership of the 
-`line-profiler <https://pypi.org/project/line_profiler/>`_ name on pypi from
-rkern to pyutils. In the meantime we have registered a temporary name on pypi
-called
-`line-profiler-pyutils <https://pypi.org/project/line-profiler-pyutils/>`_ 
-which hosts releases compatible recent version of Python.
+versions of Python.  The most recent version of `line-profiler
+<https://pypi.org/project/line_profiler/>`_ on pypi points to this repo.
 
 ----
 
@@ -43,11 +38,11 @@ Please install as follows until it is fixed in the next release::
 
 Releases of `line_profiler` can be installed using pip::
 
-    $ pip install line_profiler_pyutils
+    $ pip install line_profiler
 
 Source releases and any binaries can be downloaded from the PyPI link.
 
-    http://pypi.python.org/pypi/line_profiler_pyutils
+    http://pypi.python.org/pypi/line_profiler
 
 To check out the development sources, you can use Git_::
 
@@ -443,9 +438,9 @@ Changes
    :target: https://ci.appveyor.com/project/pyutils/line_profiler/branch/master
 .. |Codecov| image:: https://codecov.io/github/pyutils/line_profiler/badge.svg?branch=master&service=github
    :target: https://codecov.io/github/pyutils/line_profiler?branch=master
-.. |Pypi| image:: https://img.shields.io/pypi/v/line_profiler_pyutils.svg
-   :target: https://pypi.python.org/pypi/line_profiler_pyutils
-.. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler_pyutils.svg
-   :target: https://pypistats.org/packages/line_profiler_pyutils
-.. |ReadTheDocs| image:: https://readthedocs.org/projects/line_profiler_pyutils/badge/?version=latest
-    :target: http://line_profiler_pyutils.readthedocs.io/en/latest/
+.. |Pypi| image:: https://img.shields.io/pypi/v/line_profiler.svg
+   :target: https://pypi.python.org/pypi/line_profiler
+.. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler.svg
+   :target: https://pypistats.org/packages/line_profiler
+.. |ReadTheDocs| image:: https://readthedocs.org/projects/line_profiler/badge/?version=latest
+    :target: http://line_profiler.readthedocs.io/en/latest/
