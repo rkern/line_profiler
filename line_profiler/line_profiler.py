@@ -414,8 +414,11 @@ def load_stats(filename):
 
 
 def main():
-    usage = "usage: %prog profile.lprof"
-    parser = optparse.OptionParser(usage=usage, version='%prog 1.0b2')
+    import line_profiler
+    usage = "usage: python -m line_profiler profile.lprof"
+
+    parser = optparse.OptionParser(usage=usage,
+                                   version=line_profiler.__version__)
 
     options, args = parser.parse_args()
     if len(args) != 1:
