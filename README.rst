@@ -376,7 +376,9 @@ Bugs and pull requested can be submitted on GitHub_.
 Changes
 =======
 
-See [CHANGELOG](CHANGELOG.rst)
+See `CHANGELOG`_.
+
+.. _CHANGELOG: CHANGELOG.rst
 
 
 .. |CircleCI| image:: https://circleci.com/gh/pyutils/line_profiler.svg?style=svg
