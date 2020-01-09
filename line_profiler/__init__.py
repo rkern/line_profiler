@@ -2,7 +2,7 @@
 mkinit ~/code/line_profiler/line_profiler/__init__.py --relative
 mkinit ~/code/line_profiler/line_profiler/__init__.py --relative -w
 """
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 
 __submodules__ = [
     'line_profiler',
