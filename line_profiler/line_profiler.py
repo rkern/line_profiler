@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
+__version__ = '3.0.2'
 
 try:
     import cPickle as pickle
@@ -414,11 +416,10 @@ def load_stats(filename):
 
 
 def main():
-    import line_profiler
     usage = "usage: python -m line_profiler profile.lprof"
 
     parser = optparse.OptionParser(usage=usage,
-                                   version=line_profiler.__version__)
+                                   version=__version__)
 
     options, args = parser.parse_args()
     if len(args) != 1:

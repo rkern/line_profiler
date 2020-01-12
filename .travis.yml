@@ -49,7 +49,7 @@ install:
     
 script: 
   # Test the installed multibuild wheel
-  - cd tests && travis_wait pytest && cd ..
+  - travis_wait ./run_tests.py
 
 after_success: 
     - codecov 
@@ -65,12 +65,27 @@ after_success:
         echo $PYUTILS_TWINE_PASSWORD
         echo $PYUTILS_CI_GITHUB_SECRET
 
+
+        # In your repo directory run the command to ensure travis recognizes the repo
+        # It will say: Detected repository as <user>/<repo>, is this correct? |yes|
+        # Answer yes before running the encrypt commands.
+        travis status
+
         # encrypt relevant travis variables (requires travis cli)
         #sudo apt install ruby ruby-dev -y
         #sudo gem install travis
-        travis encrypt PYUTILS_TWINE_USERNAME=$PYUTILS_TWINE_USERNAME 
-        travis encrypt PYUTILS_TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD  
-        travis encrypt PYUTILS_CI_GITHUB_SECRET=$PYUTILS_CI_GITHUB_SECRET
+        SECURE_TWINE_USERNAME=$(travis encrypt --no-interactive PYUTILS_TWINE_USERNAME=$PYUTILS_TWINE_USERNAME)
+        SECURE_TWINE_PASSWORD=$(travis encrypt --no-interactive PYUTILS_TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD)
+        SECURE_CI_GITHUB_SECRET=$(travis encrypt --no-interactive PYUTILS_CI_GITHUB_SECRET=$PYUTILS_CI_GITHUB_SECRET)
+        echo "
+        Add the following lines to your .travis.yml
+
+        env:
+            global:
+                - secure: $SECURE_TWINE_USERNAME
+                - secure: $SECURE_TWINE_PASSWORD
+                - secure: $SECURE_CI_GITHUB_SECRET
+        "
 
         # HOW TO ENCRYPT YOUR SECRET GPG KEY
         IDENTIFIER=PyUtils

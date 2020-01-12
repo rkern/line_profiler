@@ -1,0 +1,26 @@
+[run]
+branch = True
+source = ubelt
+
+[report]
+exclude_lines =
+    pragma: no cover
+    .*  # pragma: no cover
+    .*  # nocover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if trace is not None
+    verbose = .*
+    ^ *raise
+    ^ *pass *$
+    if _debug:
+    if __name__ == .__main__.:
+    .*if six.PY2:
+
+omit =
+    ubelt/tests/*
+    ubelt/_win32_links.py
+    ubelt/__main__.py
+    */setup.py

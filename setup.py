@@ -212,7 +212,7 @@ profile Python applications and scripts either with line_profiler or with the
 function-level profiling tools in the Python standard library.
 """
 
-VERSION = parse_version('line_profiler/__init__.py')
+VERSION = parse_version('line_profiler/line_profiler.py')
 MB_PYTHON_TAG = native_mb_python_tag()
 # note: name is temporary until line_profiler pypi name is transfered
 NAME = 'line_profiler'

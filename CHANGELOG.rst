@@ -1,6 +1,10 @@
 Changes
 =======
 
+3.0.2
+~~~~~
+* BUG: fix ``__version__`` attribute in Python 2 CLI.
+
 3.0.1
 ~~~~~
 * BUG: fix calling the package from the command line

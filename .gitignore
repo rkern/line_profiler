@@ -16,3 +16,6 @@ line_profiler.egg-info/
 MANIFEST
 pypi-site-docs.zip
 index.html
+
+.coverage
+tests/htmlcov
