@@ -1,2 +1,5 @@
-pytest
-ubelt
+pytest >= 3.3.1
+pytest-cov
+coverage >= 4.3.4
+codecov >= 2.0.15
+ubelt >= 0.8.7
