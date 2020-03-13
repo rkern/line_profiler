@@ -4,12 +4,13 @@ line_profiler and kernprof
 |Pypi| |Downloads| |Travis|
 
 
-NOTICE: The the original 
+NOTICE: This is the official `line_profiler` repository. The most recent
+version of `line-profiler <https://pypi.org/project/line_profiler/>`_ on pypi
+points to this repo. The the original 
 `line_profiler <https://github.com/rkern/line_profiler/>`_ package by  
 `@rkern <https://github.com/rkern/>`_ is currently unmaintained. This fork
 seeks to simply maintain the original code so it continues to work in new
-versions of Python.  The most recent version of `line-profiler
-<https://pypi.org/project/line_profiler/>`_ on pypi points to this repo.
+versions of Python.
 
 ----
 
@@ -27,14 +28,6 @@ They are available under a `BSD license`_.
 
 Installation
 ============
-
-**Note:** As of version 2.1.2, `pip install line_profiler` does not work.
-Please install as follows until it is fixed in the next release::
-    
-    git clone https://github.com/pyutils/line_profiler.git
-    find line_profiler -name '*.pyx' -exec cython {} \;
-    cd line_profiler
-    pip install . --user 
 
 Releases of `line_profiler` can be installed using pip::
 
@@ -347,10 +340,14 @@ Frequently Asked Questions
     C sources. You will probably need version 0.10 or higher. There is a bug in
     some earlier versions in how it handles NULL PyObject* pointers.
 
+    As of version ``3.0.0`` manylinux wheels containing the binaries are
+    available on pypi. Work is still needed to publish osx and win32 wheels.
+    (PRs for this would be helpful!)
+
 * What version of Python do I need?
 
     Both `line_profiler` and `kernprof` have been tested with Python 2.7, and
-    3.2-3.4.
+    3.5-3.8.
 
 
 To Do
