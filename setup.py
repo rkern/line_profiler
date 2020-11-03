@@ -139,8 +139,8 @@ def native_mb_python_tag():
             else:
                 abi = 'm'
         else:
-            if ver == '38':
-                # no abi in 38?
+            if sys.version_info[:2] >= (3, 8):
+                # bpo-36707: 3.8 dropped the m flag
                 abi = ''
             else:
                 abi = 'm'

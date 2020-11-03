@@ -32,10 +32,6 @@ hpTimerUnit(void)
 
 #else  /* !MS_WINDOWS */
 
-#ifndef HAVE_GETTIMEOFDAY
-#error "This module requires gettimeofday() on non-Windows platforms!"
-#endif
-
 #if (defined(PYOS_OS2) && defined(PYCC_GCC))
 #include <sys/time.h>
 #else
@@ -48,11 +44,7 @@ hpTimer(void)
 {
         struct timeval tv;
         PY_LONG_LONG ret;
-#ifdef GETTIMEOFDAY_NO_TZ
-        gettimeofday(&tv);
-#else
         gettimeofday(&tv, (struct timezone *)NULL);
-#endif
         ret = tv.tv_sec;
         ret = ret * 1000000 + tv.tv_usec;
         return ret;
