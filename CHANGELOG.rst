@@ -1,6 +1,11 @@
 Changes
 =======
 
+3.1.0
+~~~~~
+* ENH: fix Python 3.9
+* Dropped 3.5 support on Travis
+
 3.0.2
 ~~~~~
 * BUG: fix ``__version__`` attribute in Python 2 CLI.
