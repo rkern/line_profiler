@@ -347,7 +347,7 @@ Frequently Asked Questions
 * What version of Python do I need?
 
     Both `line_profiler` and `kernprof` have been tested with Python 2.7, and
-    3.6-3.9. Older versions of `line_profiler` support older versions of
+    3.5-3.9. Older versions of `line_profiler` support older versions of
     Python.
 
 

@@ -4,7 +4,6 @@ Changes
 3.1.0
 ~~~~~
 * ENH: fix Python 3.9
-* Dropped 3.5 support on Travis
 
 3.0.2
 ~~~~~
