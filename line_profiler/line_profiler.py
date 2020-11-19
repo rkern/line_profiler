@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
-__version__ = '3.1.0'
+__version__ = '3.2.0'
 
 try:
     import cPickle as pickle
@@ -416,16 +416,26 @@ def load_stats(filename):
 
 
 def main():
+    def strictly_positive(option, opt, value, parser):
+        if value <= 0:
+            raise optparse.OptionValueError("option %s: floating-point value must be > 0, got %s" % (opt, value))
+        setattr(parser.values, option.dest, value)
+
     usage = "usage: python -m line_profiler profile.lprof"
 
     parser = optparse.OptionParser(usage=usage,
                                    version=__version__)
+    parser.add_option('-u', '--unit', default='1e-6', type=float,
+        action='callback', callback=strictly_positive,
+        help="Output unit (in seconds) in which the timing info is to be displayed. Defaults to 1e-6.")
+    parser.add_option('-s', '--skip-zero', action='store_true', help="Hide functions which have not been called.")
 
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Must provide a filename.")
     lstats = load_stats(args[0])
-    show_text(lstats.timings, lstats.unit)
+    show_text(lstats.timings, lstats.unit, output_unit=options.unit, stripzeros=options.skip_zero)
+
 
 if __name__ == '__main__':
     main()

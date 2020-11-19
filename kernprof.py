@@ -8,6 +8,11 @@ import optparse
 import os
 import sys
 
+try:
+    from line_profiler import __version__
+except ImportError:
+    __version__ = 'UNKNOWN'
+
 PY3 = sys.version_info[0] == 3
 
 # Guard the import of cProfile such that 3.x people
@@ -151,10 +156,15 @@ def find_script(script_name):
 
 
 def main(args=None):
+    def strictly_positive(option, opt, value, parser):
+        if value <= 0:
+            raise optparse.OptionValueError("option %s: floating-point value must be > 0, got %s" % (opt, value))
+        setattr(parser.values, option.dest, value)
+
     if args is None:
         args = sys.argv
     usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
-    parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
+    parser = optparse.OptionParser(usage=usage, version=__version__)
     parser.allow_interspersed_args = False
     parser.add_option('-l', '--line-by-line', action='store_true',
         help="Use the line-by-line profiler from the line_profiler module "
@@ -170,6 +180,12 @@ def main(args=None):
         help="Code to execute before the code to profile")
     parser.add_option('-v', '--view', action='store_true',
         help="View the results of the profile in addition to saving it.")
+    parser.add_option('-u', '--unit', default='1e-6', type=float,
+        action='callback', callback=strictly_positive,
+        help="Output unit (in seconds) in which the timing info is to be "
+            "displayed (for --view). Defaults to 1e-6.")
+    parser.add_option('--skip-zero', action='store_true',
+        help="Hide functions which have not been called (for --view).")
 
     if not sys.argv[1:]:
         parser.print_usage()
@@ -232,7 +248,7 @@ def main(args=None):
         prof.dump_stats(options.outfile)
         print('Wrote profile results to %s' % options.outfile)
         if options.view:
-            prof.print_stats()
+            prof.print_stats(output_unit=options.unit, stripzeros=options.skip_zero)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
