@@ -16,9 +16,9 @@ except ImportError:
 import functools
 import inspect
 import linecache
-import optparse
 import os
 import sys
+from argparse import ArgumentError, ArgumentParser
 
 from IPython.core.magic import (Magics, magics_class, line_magic)
 from IPython.core.page import page
@@ -416,25 +416,32 @@ def load_stats(filename):
 
 
 def main():
-    def strictly_positive(option, opt, value, parser):
-        if value <= 0:
-            raise optparse.OptionValueError("option %s: floating-point value must be > 0, got %s" % (opt, value))
-        setattr(parser.values, option.dest, value)
+    def positive_float(value):
+        val = float(value)
+        if val <= 0:
+            raise ArgumentError
+        return val
 
-    usage = "usage: python -m line_profiler profile.lprof"
+    parser = ArgumentParser()
+    parser.add_argument('-V', '--version', action='version', version=__version__)
+    parser.add_argument(
+        '-u',
+        '--unit',
+        default='1e-6',
+        type=positive_float,
+        help="Output unit (in seconds) in which the timing info is displayed (default: 1e-6)",
+    )
+    parser.add_argument(
+        '-z',
+        '--skip-zero',
+        action='store_true',
+        help="Hide functions which have not been called",
+    )
+    parser.add_argument('profile_output', help="*.lprof file created by kernprof")
 
-    parser = optparse.OptionParser(usage=usage,
-                                   version=__version__)
-    parser.add_option('-u', '--unit', default='1e-6', type=float,
-        action='callback', callback=strictly_positive,
-        help="Output unit (in seconds) in which the timing info is to be displayed. Defaults to 1e-6.")
-    parser.add_option('-s', '--skip-zero', action='store_true', help="Hide functions which have not been called.")
-
-    options, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error("Must provide a filename.")
-    lstats = load_stats(args[0])
-    show_text(lstats.timings, lstats.unit, output_unit=options.unit, stripzeros=options.skip_zero)
+    args = parser.parse_args()
+    lstats = load_stats(args.profile_output)
+    show_text(lstats.timings, lstats.unit, output_unit=args.unit, stripzeros=args.skip_zero)
 
 
 if __name__ == '__main__':
