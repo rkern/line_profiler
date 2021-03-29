@@ -229,11 +229,11 @@ workflows:
           requires:
               - test_full/cp35-cp35m-manylinux2010
 
-      - deploy/cp38-cp38-manylinux2010:
-          filters:
-            branches:
-              only: 
-                 - release
+      #- deploy/cp38-cp38-manylinux2010:
+      #    filters:
+      #      branches:
+      #        only: 
+      #           - release
 
 
 jobs:
