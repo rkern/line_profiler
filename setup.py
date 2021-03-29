@@ -151,26 +151,7 @@ def native_mb_python_tag():
 
 
 USE_SKBUILD = True
-if USE_SKBUILD:
-
-    if '--universal' in sys.argv:
-        # Dont use scikit-build for universal wheels
-        if 'develop' in sys.argv:
-            sys.argv.remove('--universal')
-        from setuptools import setup
-    else:
-        from skbuild import setup
-
-    setupkw = dict(
-        # include_package_data=False,
-        # package_dir={
-        #     '': '.',
-        #     # Note: this requires that FLANN_LIB_INSTALL_DIR is set to pyflann/lib
-        #     # in the src/cpp/CMakeLists.txt
-        #     # 'line_profiler.lib': 'line_profiler/lib',
-        # },
-    )
-else:
+if not USE_SKBUILD:
     # Monkeypatch distutils.
     import distutils.errors
     # from distutils.core import setup
@@ -224,6 +205,15 @@ NAME = 'line_profiler'
 
 
 if __name__ == '__main__':
+    if USE_SKBUILD:
+        if '--universal' in sys.argv:
+            # Dont use scikit-build for universal wheels
+            # if 'develop' in sys.argv:
+            sys.argv.remove('--universal')
+            from setuptools import setup  # NOQA
+        else:
+            from skbuild import setup
+        setupkw = dict()
     setupkw.update(dict(
         name=NAME,
         version=VERSION,
@@ -242,16 +232,12 @@ if __name__ == '__main__':
             "Operating System :: OS Independent",
             "Programming Language :: C",
             "Programming Language :: Python",
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.2',
-            'Programming Language :: Python :: 3.3',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
             'Programming Language :: Python :: Implementation :: CPython',
             "Topic :: Software Development",
         ],

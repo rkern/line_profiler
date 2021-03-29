@@ -45,6 +45,7 @@ if __name__ == '__main__':
             '--cov-report', 'html',
             '--cov-report', 'term',
             '--cov=' + package_name,
+            '--cov=' + 'kernprof',
         ]
         pytest_args = pytest_args + sys.argv[1:]
         sys.exit(pytest.main(pytest_args))

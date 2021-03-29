@@ -1,7 +1,7 @@
 line_profiler and kernprof
 --------------------------
 
-|Pypi| |Downloads| |Travis|
+|Pypi| |Downloads| |CircleCI|
 
 
 NOTICE: This is the official `line_profiler` repository. The most recent
@@ -346,9 +346,8 @@ Frequently Asked Questions
 
 * What version of Python do I need?
 
-    Both `line_profiler` and `kernprof` have been tested with Python 2.7, and
-    3.5-3.9. Older versions of `line_profiler` support older versions of
-    Python.
+    Both `line_profiler` and `kernprof` have been tested with Python 3.5-3.9.
+    Older versions of `line_profiler` support older versions of Python.
 
 
 To Do
@@ -391,5 +390,3 @@ See `CHANGELOG`_.
    :target: https://pypi.python.org/pypi/line_profiler
 .. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler.svg
    :target: https://pypistats.org/packages/line_profiler
-.. |ReadTheDocs| image:: https://readthedocs.org/projects/line_profiler/badge/?version=latest
-    :target: http://line_profiler.readthedocs.io/en/latest/

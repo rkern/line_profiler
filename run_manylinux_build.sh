@@ -55,6 +55,7 @@ DOCKER_IMAGE=${DOCKER_IMAGE:="quay.io/pypa/manylinux2010_x86_64:latest"}
 MB_PYTHON_TAG=${MB_PYTHON_TAG:=$(python -c "import setup; print(setup.native_mb_python_tag())")}
 NAME=${NAME:=$(python -c "import setup; print(setup.NAME)")}
 VERSION=${VERSION:=$(python -c "import setup; print(setup.VERSION)")}
+REPO_ROOT=${REPO_ROOT:=/io}
 echo "
 MB_PYTHON_TAG = $MB_PYTHON_TAG
 DOCKER_IMAGE = $DOCKER_IMAGE
@@ -101,7 +102,7 @@ else
 
     source $VENV_DIR/bin/activate 
 
-    cd /io
+    cd $REPO_ROOT
     pip install -r requirements/build.txt
     python setup.py bdist_wheel
 

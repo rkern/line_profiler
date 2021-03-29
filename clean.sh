@@ -14,7 +14,10 @@ rm -rf wheelhouse
 rm -rf pip-wheel-metadata
 rm -rf htmlcov
 
-rm distutils.errors || echo "skip rm"
+
+if [ -f "distutils.errors" ]; then
+    rm distutils.errors || echo "skip rm"
+fi
 
 CLEAN_PYTHON='find . -regex ".*\(__pycache__\|\.py[co]\)" -delete || find . -iname *.pyc -delete || find . -iname *.pyo -delete'
 bash -c "$CLEAN_PYTHON"
