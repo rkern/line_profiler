@@ -61,10 +61,10 @@ __doc__: &__doc__
         machine. However, there are a handeful of required environment
         variables which will contain sensitive information. These variables are
 
-        * TWINE_USERNAME - this is your pypi username
+        * PYUTILS_TWINE_USERNAME - this is your pypi username
             twine info is only needed if you want to automatically publish to pypi
 
-        * TWINE_PASSWORD - this is your pypi password 
+        * PYUTILS_TWINE_PASSWORD - this is your pypi password 
 
         * PYUTILS_CI_GITHUB_SECRET - We will use this as a secret key to encrypt/decrypt gpg secrets 
             This is only needed if you want to automatically sign published
@@ -111,8 +111,8 @@ __doc__: &__doc__
             #!/bin/bash
             echo /some/secret/file 
 
-            export TWINE_USERNAME=<pypi-username>
-            export TWINE_PASSWORD=<pypi-password>
+            export PYUTILS_TWINE_USERNAME=<pypi-username>
+            export PYUTILS_TWINE_PASSWORD=<pypi-password>
             export PYUTILS_CI_GITHUB_SECRET="<a-very-long-secret-string>"
             export GITHUB_PUSH_TOKEN='git-push-token:<token-password>'
         ```
@@ -132,7 +132,7 @@ __doc__: &__doc__
         # Load or generate secrets
         source $(secret_loader.sh)
         echo $PYUTILS_CI_GITHUB_SECRET
-        echo $TWINE_USERNAME
+        echo $PYUTILS_TWINE_USERNAME
 
         # ADD RELEVANT VARIABLES TO CIRCLECI SECRET VARIABLES
         # https://app.circleci.com/settings/project/github/pyutils/line_profiler/environment-variables
@@ -339,12 +339,13 @@ jobs:
                 # Install twine
                 pip install six pyopenssl ndg-httpsclient pyasn1 -U 
                 # Execute the publish script for real this time
-                MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DO_UPLOAD=True DO_TAG=False ./publish.sh 
+                MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD TWINE_USERNAME=$PYUTILS_TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DO_UPLOAD=True DO_TAG=False ./publish.sh 
                 # Have the server git-tag the release and push the tags
                 VERSION=$($PYTHON_EXE -c "import setup; print(setup.VERSION)")
                 # do sed twice to handle the case of https clone with and without a read token
                 URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
                 echo "URL_HOST = $URL_HOST"
+                # TODO: need to fix this on CI
                 # A git config user name and email is required. Set if needed.
                 # Need to figure out how to use deploy keys with this
                 #if [[ "$(git config user.email)" == "" ]]; then
