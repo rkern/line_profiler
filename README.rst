@@ -241,13 +241,12 @@ command::
 
     $ python -m pstats script_to_profile.py.prof
 
-Such files may also be viewed with graphical tools like kcachegrind_ through the
-converter program pyprof2calltree_ or RunSnakeRun_.
+Such files may also be viewed with graphical tools like SnakeViz_ and converted
+through pyprof2calltree_ to run on kcachegrind_ and compatible apps.
 
 .. _kcachegrind: http://kcachegrind.sourceforge.net/html/Home.html
 .. _pyprof2calltree: http://pypi.python.org/pypi/pyprof2calltree/
-.. _RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
-
+.. _SnakeViz: https://github.com/jiffyclub/snakeviz/
 
 Frequently Asked Questions
 ==========================
