@@ -35,17 +35,43 @@ Usage:
     export TWINE_USERNAME=<pypi-username>
     export TWINE_PASSWORD=<pypi-password>
 
-    source $(secret_loader.sh)
-
     MB_PYTHON_TAG=cp38-cp38m 
     MB_PYTHON_TAG=cp37-cp37m 
     MB_PYTHON_TAG=cp36-cp36m 
     MB_PYTHON_TAG=cp35-cp35m 
-
     echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
-    MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_multibuild.sh
 
-    MB_PYTHON_TAG=py3-none-any ./publish.sh
+    load_secrets
+
+    export WHEEL_NAME_HACK=True
+    TWINE_USERNAME=$PYUTILS_TEST_TWINE_USERNAME
+    TWINE_PASSWORD=$PYUTILS_TEST_TWINE_PASSWORD
+    TWINE_REPOSITORY_URL="https://test.pypi.org/legacy/" 
+
+    MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
+    VERSION=$(python -c "import setup; print(setup.VERSION)") 
+    NAME=$(python -c "import setup; print(setup.NAME)") 
+    echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
+    echo "VERSION = $VERSION"
+    echo "NAME = $NAME"
+
+    NAME=$NAME \
+        VERSION=$VERSION \
+        MB_PYTHON_TAG=$MB_PYTHON_TAG \
+        WHEEL_NAME_HACK=$WHEEL_NAME_HACK \
+        ./run_manylinux_build.sh
+
+    NAME=$NAME \
+        VERSION=$VERSION \
+        MB_PYTHON_TAG=$MB_PYTHON_TAG \
+        TWINE_REPOSITORY_URL=$TWINE_REPOSITORY_URL \
+        TWINE_USERNAME=$TWINE_USERNAME \
+        TWINE_PASSWORD=$TWINE_PASSWORD \
+        DO_TAG=False \
+        DO_UPLOAD=True \
+        ./publish.sh
+
+    #MB_PYTHON_TAG=py3-none-any ./publish.sh
 '''
 
 check_variable(){
@@ -105,6 +131,15 @@ DO_TAG=$(normalize_boolean "$DO_TAG")
 TWINE_USERNAME=${TWINE_USERNAME:=""}
 TWINE_PASSWORD=${TWINE_PASSWORD:=""}
 
+
+if [[ "$(cat .git/HEAD)" != "ref: refs/heads/release" ]]; then 
+    # If we are not on release, then default to the test pypi upload repo
+    TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://test.pypi.org/legacy/"}
+else
+    TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://upload.pypi.org/legacy/"}
+fi
+
+
 if [[ "$(which gpg2)" != "" ]]; then
     GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg2}
 else
@@ -117,8 +152,10 @@ GPG_KEYID=${GPG_KEYID:=$(git config --global user.signingkey)}
 
 echo "
 === PYPI BUILDING SCRIPT ==
+NAME='$NAME'
 VERSION='$VERSION'
 TWINE_USERNAME='$TWINE_USERNAME'
+TWINE_REPOSITORY_URL = $TWINE_REPOSITORY_URL
 GPG_KEYID = '$GPG_KEYID'
 MB_PYTHON_TAG = '$MB_PYTHON_TAG'
 
@@ -126,6 +163,7 @@ DO_UPLOAD=${DO_UPLOAD}
 DO_TAG=${DO_TAG}
 DO_GPG=${DO_GPG}
 DO_BUILD=${DO_BUILD}
+
 "
 
 
@@ -303,9 +341,13 @@ if [[ "$DO_UPLOAD" == "True" ]]; then
     for WHEEL_PATH in "${WHEEL_PATHS[@]}"
     do
         if [ "$DO_GPG" == "True" ]; then
-            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD --sign $WHEEL_PATH.asc $WHEEL_PATH  || { echo 'failed to twine upload' ; exit 1; }
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD  \
+                --repository-url $TWINE_REPOSITORY_URL \
+                --sign $WHEEL_PATH.asc $WHEEL_PATH --skip-existing --verbose || { echo 'failed to twine upload' ; exit 1; }
         else
-            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD $WHEEL_PATH  || { echo 'failed to twine upload' ; exit 1; }
+            twine upload --username $TWINE_USERNAME --password=$TWINE_PASSWORD \
+                --repository-url $TWINE_REPOSITORY_URL \
+                $WHEEL_PATH --skip-existing --verbose || { echo 'failed to twine upload' ; exit 1; }
         fi
     done
     echo """

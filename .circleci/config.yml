@@ -262,9 +262,9 @@ jobs:
           name: prepare_env
           command: |
             $PYTHON_EXE -m venv venv
-            $PYTHON_EXE -m pip install --upgrade pip
+            # $PYTHON_EXE -m pip install --upgrade pip
             . venv/bin/activate
-            pip install --upgrade pip
+            # pip install --upgrade pip
       - run:
           name: build_wheel
           command: |
@@ -280,7 +280,7 @@ jobs:
           name: install_wheel
           command: |
             . venv/bin/activate
-            pip install --upgrade pip
+            # pip install --upgrade pip
             MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
             VERSION=$(python -c "import setup; print(setup.VERSION)") 
             BDIST_WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)

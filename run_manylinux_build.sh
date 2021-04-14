@@ -69,24 +69,27 @@ if [ "$_INSIDE_DOCKER" != "YES" ]; then
     docker run --rm \
         -v $PWD:/io \
         -e _INSIDE_DOCKER="YES" \
-        -e MB_PYTHON_TAG="$MB_PYTHON_TAG" \
         -e NAME="$NAME" \
         -e VERSION="$VERSION" \
+        -e MB_PYTHON_TAG="$MB_PYTHON_TAG" \
+        -e WHEEL_NAME_HACK="$WHEEL_NAME_HACK" \
         $DOCKER_IMAGE bash -c 'cd /io && ./run_manylinux_build.sh'
 
     __interactive__='''
     docker run --rm \
         -v $PWD:/io \
         -e _INSIDE_DOCKER="YES" \
-        -e MB_PYTHON_TAG="$MB_PYTHON_TAG" \
         -e NAME="$NAME" \
         -e VERSION="$VERSION" \
+        -e MB_PYTHON_TAG="$MB_PYTHON_TAG" \
+        -e WHEEL_NAME_HACK="$WHEEL_NAME_HACK" \
         -it $DOCKER_IMAGE bash
 
     set +e
     set +x
     '''
 
+    ls -al wheelhouse
     BDIST_WHEEL_PATH=$(ls wheelhouse/$NAME-$VERSION-$MB_PYTHON_TAG*.whl)
     echo "BDIST_WHEEL_PATH = $BDIST_WHEEL_PATH"
 else
