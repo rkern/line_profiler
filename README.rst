@@ -393,7 +393,3 @@ See `CHANGELOG`_.
    :target: https://github.com/pyutils/line_profiler/actions/workflows/python-test.yml
 .. |ActionsPublish| image:: https://github.com/pyutils/line_profiler/actions/workflows/python-publish.yml/badge.svg
    :target: https://github.com/pyutils/line_profiler/actions/workflows/python-publish.yml
-
-
-https://github.com/pyutils/line_profiler/actions/workflows/python-publish/badge.svg
-
