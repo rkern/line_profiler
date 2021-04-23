@@ -145,15 +145,17 @@ __scratch_work__:
       - | 
         __doc__=" 
         # Run circleci scripts on a local machine
+        # snap install circleci
         mkdir -p $HOME/Downloads
         curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/Downloads bash
 
-        $HOME/.local/bin/circleci update
-        $HOME/.local/bin/circleci switch
+        circleci update
+        circleci switch
 
-        $HOME/.local/bin/circleci config validate
-        $HOME/.local/bin/circleci local execute --job test_full/cp39-cp39-manylinux2010
-        $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-cp38-manylinux2010
-        $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
+        circleci config validate
+        circleci local execute --job test_full/cp39-cp39-manylinux2010
+        circleci local execute --config .circleci/config.yml --job test_full/cp38-cp38-manylinux2010
+        circleci local execute --config .circleci/config.yml 
 
-        $HOME/.local/bin/circleci local execute --job test_full/cp38-cp38-manylinux2010
+        circleci local execute --job test_full/cp38-cp38-manylinux2010
+        "

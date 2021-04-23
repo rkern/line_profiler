@@ -52,6 +52,9 @@ jobs:
     - name: Test Wheel
       run: |
         python run_tests.py
+    - name: Upload coverage
+      run: |
+        codecov --file tests/.coverage
     
 #__doc__: |
 #    # How to run locally
