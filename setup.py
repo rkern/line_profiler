@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from os.path import exists
-import os
 import sys
 import setuptools  # NOQA
 from setuptools import find_packages
@@ -178,39 +177,6 @@ def native_mb_python_tag():
     return mb_tag
 
 
-USE_SKBUILD = True
-if not USE_SKBUILD:
-    # Monkeypatch distutils.
-    import distutils.errors
-    # from distutils.core import setup
-    from distutils.extension import Extension
-    from distutils.log import warn
-    from setuptools import setup
-    # use setuptools
-    try:
-        from Cython.Distutils import build_ext
-        cmdclass = dict(build_ext=build_ext)
-        line_profiler_source = '_line_profiler.pyx'
-    except ImportError:
-        cmdclass = {}
-        line_profiler_source = '_line_profiler.c'
-        if not os.path.exists(line_profiler_source):
-            raise distutils.errors.DistutilsError("""\
-    You need Cython to build the line_profiler from a git checkout, or
-    alternatively use a release tarball from PyPI to build it without Cython.""")
-        else:
-            warn("Could not import Cython. "
-                 "Using the available pre-generated C file.")
-
-    setupkw = dict(
-        cmdclass=cmdclass,
-        ext_modules=[
-            Extension('_line_profiler',
-                      sources=[line_profiler_source, 'timers.c', 'unset_trace.c'],
-                      depends=['python25.pxd']),
-        ],
-    )
-
 long_description = """\
 line_profiler will profile the time individual lines of code take to execute.
 The profiler is implemented in C via Cython in order to reduce the overhead of
@@ -253,16 +219,14 @@ VERSION = _augment_version(VERSION)
 
 
 if __name__ == '__main__':
-    if USE_SKBUILD:
-        if '--universal' in sys.argv:
-            # Dont use scikit-build for universal wheels
-            # if 'develop' in sys.argv:
-            sys.argv.remove('--universal')
-            from setuptools import setup  # NOQA
-        else:
-            from skbuild import setup
-        setupkw = dict()
-    setupkw.update(dict(
+    if '--universal' in sys.argv:
+        # Dont use scikit-build for universal wheels
+        # if 'develop' in sys.argv:
+        sys.argv.remove('--universal')
+        from setuptools import setup  # NOQA
+    else:
+        from skbuild import setup
+    setupkw = dict(
         name=NAME,
         version=VERSION,
         author='Robert Kern',
@@ -304,5 +268,5 @@ if __name__ == '__main__':
             'tests': parse_requirements('requirements/tests.txt'),
             'build': parse_requirements('requirements/build.txt'),
         },
-    ))
+    )
     setup(**setupkw)
