@@ -18,4 +18,5 @@ pypi-site-docs.zip
 index.html
 
 .coverage
+tests/coverage.xml
 tests/htmlcov
