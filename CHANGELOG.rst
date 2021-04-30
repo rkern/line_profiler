@@ -1,6 +1,10 @@
 Changes
 =======
 
+3.2.3
+~~~~~
+* FIX: Use ImportError instead of ModuleNotFoundError while 3.5 is being supported
+
 3.2.2
 ~~~~~
 * ENH: Added better error message when c-extension is not compiled.

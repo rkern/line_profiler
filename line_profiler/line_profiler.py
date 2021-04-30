@@ -25,10 +25,10 @@ from IPython.core.error import UsageError
 
 try:
     from ._line_profiler import LineProfiler as CLineProfiler
-except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError(
-        'The line_profiler._line_profiler c-extension module has not '
-        'been compiled. ex={!r}'.format(ex)
+except ImportError as ex:
+    raise ImportError(
+        'The line_profiler._line_profiler c-extension is not importable. '
+        'Has it been compiled? Underlying error is ex={!r}'.format(ex)
     )
 
 
@@ -55,7 +55,7 @@ def _augment_version(VERSION):
     return VERSION
 
 
-__version__ = '3.2.2'
+__version__ = '3.2.3'
 __version__ = _augment_version(__version__)
 
 # Python 2/3 compatibility utils
