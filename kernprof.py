@@ -8,10 +8,9 @@ import os
 import sys
 from argparse import ArgumentError, ArgumentParser
 
-try:
-    from line_profiler import __version__
-except ImportError:
-    __version__ = 'UNKNOWN'
+# NOTE: This version needs to be manually maintained with the line_profiler
+# __version__ for now.
+__version__ = '3.2.2'
 
 PY3 = sys.version_info[0] == 3
 
@@ -178,7 +177,7 @@ def main(args=None):
     parser.add_argument('-v', '--view', action='store_true',
         help="View the results of the profile in addition to saving it")
     parser.add_argument('-u', '--unit', default='1e-6', type=positive_float,
-        
+
         help="Output unit (in seconds) in which the timing info is "
         "displayed (default: 1e-6)")
     parser.add_argument('-z', '--skip-zero', action='store_true',
