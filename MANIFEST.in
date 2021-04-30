@@ -5,3 +5,4 @@ include *.txt
 include run_tests.sh
 recursive-include requirements *.txt
 recursive-include tests *.py
+recursive-include line_profiler *.txt

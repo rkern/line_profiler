@@ -55,7 +55,7 @@ def _augment_version(VERSION):
     return VERSION
 
 
-__version__ = '3.2.3'
+__version__ = '3.2.4'
 __version__ = _augment_version(__version__)
 
 # Python 2/3 compatibility utils

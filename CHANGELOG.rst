@@ -1,6 +1,10 @@
 Changes
 =======
 
+3.2.4
+~~~~~
+* FIX: Update MANIFEST.in to package nested CMakeLists.txt in the sdist
+
 3.2.3
 ~~~~~
 * FIX: Use ImportError instead of ModuleNotFoundError while 3.5 is being supported
