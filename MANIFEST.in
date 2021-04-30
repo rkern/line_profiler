@@ -6,3 +6,7 @@ include run_tests.sh
 recursive-include requirements *.txt
 recursive-include tests *.py
 recursive-include line_profiler *.txt
+recursive-include line_profiler *.pyx
+recursive-include line_profiler *.pyd
+recursive-include line_profiler *.c
+recursive-include line_profiler *.h

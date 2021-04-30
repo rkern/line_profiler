@@ -10,7 +10,7 @@ from argparse import ArgumentError, ArgumentParser
 
 # NOTE: This version needs to be manually maintained with the line_profiler
 # __version__ for now.
-__version__ = '3.2.4'
+__version__ = '3.2.5'
 
 PY3 = sys.version_info[0] == 3
 

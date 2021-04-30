@@ -1,6 +1,10 @@
 Changes
 =======
 
+3.2.5
+~~~~~
+* FIX: Update MANIFEST.in to package nested c source files in the sdist
+
 3.2.4
 ~~~~~
 * FIX: Update MANIFEST.in to package nested CMakeLists.txt in the sdist
