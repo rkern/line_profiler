@@ -4,6 +4,7 @@ Changes
 3.2.3
 ~~~~~
 * FIX: Use ImportError instead of ModuleNotFoundError while 3.5 is being supported
+* FIX: Add MANIFEST.in to package CMakeLists.txt in the sdist
 
 3.2.2
 ~~~~~

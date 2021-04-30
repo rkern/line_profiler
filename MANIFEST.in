@@ -1,0 +1,7 @@
+include *.md
+include *.rst
+include *.py
+include *.txt
+include run_tests.sh
+recursive-include requirements *.txt
+recursive-include tests *.py
