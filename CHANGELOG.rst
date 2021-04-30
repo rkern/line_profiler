@@ -1,6 +1,12 @@
 Changes
 =======
 
+
+3.2.6
+~~~~~
+* FIX: Update MANIFEST.in to package pyproj.toml and missing pyx file
+* CHANGE: Removed version experimental augmentation. 
+
 3.2.5
 ~~~~~
 * FIX: Update MANIFEST.in to package nested c source files in the sdist

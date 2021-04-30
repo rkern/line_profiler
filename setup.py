@@ -192,32 +192,6 @@ MB_PYTHON_TAG = native_mb_python_tag()
 NAME = 'line_profiler'
 
 
-def _augment_version(VERSION):
-    from os.path import join, dirname, exists
-    repo_dpath = join(dirname(__file__))
-    git_dpath = join(repo_dpath, '.git')
-    if exists(git_dpath):
-        head_fpath = join(git_dpath, 'HEAD')
-        with open(head_fpath, 'r') as file:
-            head_contents = file.read()
-        part1 = head_contents.split(' ')[0]
-        if part1 == 'ref:':
-            ref = head_contents.split('\n')[0].split()[-1]
-            ref_fpath = join(git_dpath, ref)
-            with open(ref_fpath, 'r') as file:
-                ref_hash = file.read().strip()
-        else:
-            ref = None
-            ref_hash = head_contents.split('\n')[0][0:8]
-        hashid = ref_hash[0:8]
-        if ref != 'refs/heads/release':
-            VERSION = VERSION.split('+')[0] + '+' + hashid
-    return VERSION
-
-
-VERSION = _augment_version(VERSION)
-
-
 if __name__ == '__main__':
     if '--universal' in sys.argv:
         # Dont use scikit-build for universal wheels
