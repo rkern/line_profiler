@@ -1,2 +1,2 @@
 IPython >=0.13 ; python_version >= '3.7'
-IPython >=0.13, <=7.7.0 ; python_version <= '3.6'
+IPython >=0.13, <7.17.0 ; python_version <= '3.6'
