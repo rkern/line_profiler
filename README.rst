@@ -1,7 +1,7 @@
 line_profiler and kernprof
 --------------------------
 
-|Pypi| |Downloads| |CircleCI| |ActionsTest| |ActionsPublish| |Codecov|
+|Pypi| |Downloads| |CircleCI| |ActionsTest| |Codecov|
 
 
 NOTICE: This is the official `line_profiler` repository. The most recent
@@ -394,7 +394,5 @@ See `CHANGELOG`_.
    :target: https://pypi.python.org/pypi/line_profiler
 .. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler.svg
    :target: https://pypistats.org/packages/line_profiler
-.. |ActionsTest| image:: https://github.com/pyutils/line_profiler/actions/workflows/python-test.yml/badge.svg
-   :target: https://github.com/pyutils/line_profiler/actions/workflows/python-test.yml
-.. |ActionsPublish| image:: https://github.com/pyutils/line_profiler/actions/workflows/python-publish.yml/badge.svg
-   :target: https://github.com/pyutils/line_profiler/actions/workflows/python-publish.yml
+.. |ActionsTest| image:: https://github.com/pyutils/line_profiler/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/pyutils/line_profiler/actions/workflows/tests.yml

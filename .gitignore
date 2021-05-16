@@ -5,12 +5,14 @@
 
 *.pyc
 *.pyo
+*.pyd
 *.so
 *.o
 *.a
 
 build/
 dist/
+_skbuild
 _line_profiler.c
 line_profiler.egg-info/
 MANIFEST
