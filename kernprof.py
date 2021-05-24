@@ -240,7 +240,11 @@ def main(args=None):
         prof.dump_stats(options.outfile)
         print('Wrote profile results to %s' % options.outfile)
         if options.view:
-            prof.print_stats(output_unit=options.unit, stripzeros=options.skip_zero)
+            if isinstance(prof, ContextualProfile):
+                prof.print_stats()
+            else:
+                prof.print_stats(output_unit=options.unit,
+                                 stripzeros=options.skip_zero)
 
 
 if __name__ == '__main__':
