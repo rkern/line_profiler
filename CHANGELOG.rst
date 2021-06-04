@@ -1,6 +1,9 @@
 Changes
 =======
 
+3.3.0
+~~~~~
+* New CI for building wheels.
 
 3.2.6
 ~~~~~
