@@ -125,7 +125,7 @@ jobs:
         platforms: all
 
     - name: Build wheels
-      uses: joerick/cibuildwheel@v1.11.0
+      uses: joerick/cibuildwheel@v1.12.0
       with:
         output-dir: wheelhouse
       # to supply options, put them in 'env', like:
