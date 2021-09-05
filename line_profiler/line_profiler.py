@@ -14,6 +14,7 @@ except ImportError:
 import functools
 import inspect
 import linecache
+import tempfile
 import os
 import sys
 from argparse import ArgumentError, ArgumentParser
@@ -194,6 +195,15 @@ class LineProfiler(CLineProfiler):
         return nfuncsadded
 
 
+def is_ipython_kernel_cell(filename):
+    """ Return True if a filename corresponds to a Jupyter Notebook cell
+    """
+    return (
+        filename.startswith("<ipython-input-") or
+        filename.startswith(tempfile.gettempdir() + '/ipykernel_')
+    )
+
+
 def show_func(filename, start_lineno, func_name, timings, unit,
     output_unit=None, stream=None, stripzeros=False):
     """ Show results for a single function.
@@ -217,7 +227,7 @@ def show_func(filename, start_lineno, func_name, timings, unit,
     scalar = unit / output_unit
 
     stream.write("Total time: %g s\n" % (total_time * unit))
-    if os.path.exists(filename) or filename.startswith("<ipython-input-"):
+    if os.path.exists(filename) or is_ipython_kernel_cell(filename):
         stream.write("File: %s\n" % filename)
         stream.write("Function: %s at line %s\n" % (func_name, start_lineno))
         if os.path.exists(filename):
