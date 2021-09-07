@@ -32,7 +32,7 @@ except ImportError as ex:
         'Has it been compiled? Underlying error is ex={!r}'.format(ex)
     )
 
-__version__ = '3.3.0'
+__version__ = '3.3.1'
 
 # Python 2/3 compatibility utils
 # ===========================================================
