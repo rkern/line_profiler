@@ -1,6 +1,10 @@
 Changes
 =======
 
+3.3.1
+~~~~~
+* FIX: Fix bug where lines were not displayed in Jupyter>=6.0 via #93
+
 3.3.0
 ~~~~~
 * New CI for building wheels.
