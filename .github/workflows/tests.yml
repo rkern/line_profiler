@@ -32,7 +32,7 @@ jobs:
   build_and_test_sdist:
     name: Test sdist Python 3.8
     runs-on: ubuntu-latest
-    needs: [lint]
+    #needs: [lint]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
@@ -71,7 +71,7 @@ jobs:
   build_and_test_wheels:
     name: ${{ matrix.cibw_build }} on ${{ matrix.os }}, arch=${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
-    needs: [lint]
+    #needs: [lint]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -79,7 +79,7 @@ jobs:
         cibw_build: [cp3*-*]
         cibw_skip: ["*-win32"]
         # Add additional workers to reduce overall build time
-        include:
+        include: 
           - os: windows-latest
             cibw_build: cp3*-win32
             arch: auto
@@ -207,9 +207,15 @@ jobs:
           $GPG_EXECUTABLE --version
           openssl version
           $GPG_EXECUTABLE --list-keys
-          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
-          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
+          echo "Decrypting Keys"
+           GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE  --import-ownertrust
+          $GPG_EXECUTABLE --list-keys || true
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
+
+          echo "Finish Decrypting Keys"
+          $GPG_EXECUTABLE --list-keys || true
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
@@ -259,9 +265,14 @@ jobs:
           $GPG_EXECUTABLE --version
           openssl version
           $GPG_EXECUTABLE --list-keys
+          echo "Decrypting Keys"
           GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
-          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
+          $GPG_EXECUTABLE --list-keys || true
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE  --import-ownertrust
+          $GPG_EXECUTABLE --list-keys || true
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import
+          $GPG_EXECUTABLE --list-keys || true
+          echo "Finish Decrypt Keys"
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")

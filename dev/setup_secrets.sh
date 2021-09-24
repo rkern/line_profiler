@@ -161,7 +161,22 @@ export_encrypted_code_signing_keys(){
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_subkeys.pgp > dev/ci_secret_gpg_subkeys.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-    echo $GPG_KEYID > dev/public_gpg_key
+    source dev/secrets_configuration.sh
+
+    CI_SECRET="${!VARNAME_CI_SECRET}"
+    echo "CI_SECRET=$CI_SECRET"
+    echo "GPG_IDENTIFIER=$GPG_IDENTIFIER"
+
+    # ADD RELEVANT VARIABLES TO THE CI SECRET VARIABLES
+
+    # HOW TO ENCRYPT YOUR SECRET GPG KEY
+    # You need to have a known public gpg key for this to make any sense
+
+    MAIN_GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$GPG_IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}')
+    GPG_SIGN_SUBKEY=$(gpg --list-keys --with-subkey-fingerprints "$GPG_IDENTIFIER" | grep "\[S\]" -A 1 | tail -n 1 | awk '{print $1}')
+    echo "MAIN_GPG_KEYID  = $MAIN_GPG_KEYID"
+    echo "GPG_SIGN_SUBKEY = $GPG_SIGN_SUBKEY"
+    echo $ > dev/public_gpg_key
 
     # Test decrpyt
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | gpg --list-packets --verbose

@@ -53,8 +53,10 @@ a compiler.  If you wish to use it to run cProfile and not line-by-line
 profiling, you may copy it to a directory on your `PATH` manually and avoid
 trying to build any C extensions.
 
-As of 2021-04-25, only the linux binaries are available on pypi. If you are on
-windows and are unable to build from source, consider using Christoph Gohlke's
+As of 2021-06-04 Linux (x86_64 and i686), OSX (10_9_x86_64), and Win32 (win32,
+and amd64) binaries are available on pypi.
+
+Alternateively on windows you might consider using Christoph Gohlke's
 unofficial line-profiler 
 `precompiled win32 wheels <https://www.lfd.uci.edu/~gohlke/pythonlibs/#line_profiler>`_.
 

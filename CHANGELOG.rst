@@ -4,6 +4,7 @@ Changes
 3.3.1
 ~~~~~
 * FIX: Fix bug where lines were not displayed in Jupyter>=6.0 via #93
+* CHANGE: moving forward, new pypi releases will be signed with the GPG key 2A290272C174D28EA9CA48E9D7224DAF0347B114 for PyUtils-CI <openpyutils@gmail.com>. For reference, older versions were signed with either 262A1DF005BE5D2D5210237C85CD61514641325F or 1636DAF294BA22B89DBB354374F166CFA2F39C18.
 
 3.3.0
 ~~~~~
