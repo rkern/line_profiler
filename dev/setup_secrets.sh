@@ -116,15 +116,29 @@ setup_package_environs(){
     that the specific repo only needs to modify that configuration file.
     "
 
-    #echo '
-    #export VARNAME_CI_SECRET="CI_KITWARE_SECRET"
-    #export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
-    #' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
-
     echo '
     export VARNAME_CI_SECRET="PYUTILS_CI_SECRET"
     export GPG_IDENTIFIER="=PyUtils-CI <openpyutils@gmail.com>"
+    export VARNAME_TWINE_PASSWORD="PYUTILS_TWINE_PASSWORD"
+    export VARNAME_TWINE_USERNAME="PYUTILS_TWINE_USERNAME"
+    export VARNAME_TEST_TWINE_PASSWORD="PYUTILS_TEST_TWINE_PASSWORD"
+    export VARNAME_TEST_TWINE_USERNAME="PYUTILS_TEST_TWINE_USERNAME"
     ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
+    git add dev/secrets_configuration.sh
+
+}
+
+
+upload_github_secrets(){
+    load_secrets
+    unset GITHUB_TOKEN
+    gh auth login
+    source dev/secrets_configuration.sh
+    gh secret set $VARNAME_CI_SECRET -b"${!VARNAME_CI_SECRET}"
+    gh secret set $VARNAME_TWINE_USERNAME -b"${!VARNAME_TWINE_USERNAME}"
+    gh secret set $VARNAME_TWINE_PASSWORD -b"${!VARNAME_TWINE_PASSWORD}"
+    gh secret set $VARNAME_TEST_TWINE_PASSWORD -b"${!VARNAME_TEST_TWINE_PASSWORD}"
+    gh secret set $VARNAME_TEST_TWINE_USERNAME -b"${!VARNAME_TEST_TWINE_USERNAME}"
 }
 
 
@@ -197,13 +211,14 @@ _test_gnu(){
 
     cat dev/public_gpg_key
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
+    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc
 
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | gpg --import
+    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | gpg --import-ownertrust
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | gpg --import
 
     gpg -k
     # | gpg --import
     # | gpg --list-packets --verbose
 }
-
