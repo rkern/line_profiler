@@ -34,44 +34,21 @@ Usage:
     # Set your variables or load your secrets
     export TWINE_USERNAME=<pypi-username>
     export TWINE_PASSWORD=<pypi-password>
+    TWINE_REPOSITORY_URL="https://test.pypi.org/legacy/" 
+
+    source $(secret_loader.sh)
 
     MB_PYTHON_TAG=cp38-cp38m 
     MB_PYTHON_TAG=cp37-cp37m 
     MB_PYTHON_TAG=cp36-cp36m 
     MB_PYTHON_TAG=cp35-cp35m 
+    MB_PYTHON_TAG=cp27-cp27mu
+
     echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
+    MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_multibuild.sh
+    DEPLOY_REMOTE=ibeis MB_PYTHON_TAG=$MB_PYTHON_TAG ./publish.sh yes
 
-    load_secrets
-
-    export WHEEL_NAME_HACK=True
-    TWINE_USERNAME=$PYUTILS_TEST_TWINE_USERNAME
-    TWINE_PASSWORD=$PYUTILS_TEST_TWINE_PASSWORD
-    TWINE_REPOSITORY_URL="https://test.pypi.org/legacy/" 
-
-    MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
-    VERSION=$(python -c "import setup; print(setup.VERSION)") 
-    NAME=$(python -c "import setup; print(setup.NAME)") 
-    echo "MB_PYTHON_TAG = $MB_PYTHON_TAG"
-    echo "VERSION = $VERSION"
-    echo "NAME = $NAME"
-
-    NAME=$NAME \
-        VERSION=$VERSION \
-        MB_PYTHON_TAG=$MB_PYTHON_TAG \
-        WHEEL_NAME_HACK=$WHEEL_NAME_HACK \
-        ./run_manylinux_build.sh
-
-    NAME=$NAME \
-        VERSION=$VERSION \
-        MB_PYTHON_TAG=$MB_PYTHON_TAG \
-        TWINE_REPOSITORY_URL=$TWINE_REPOSITORY_URL \
-        TWINE_USERNAME=$TWINE_USERNAME \
-        TWINE_PASSWORD=$TWINE_PASSWORD \
-        DO_TAG=False \
-        DO_UPLOAD=True \
-        ./publish.sh
-
-    #MB_PYTHON_TAG=py3-none-any ./publish.sh
+    MB_PYTHON_TAG=py3-none-any ./publish.sh
 '''
 
 check_variable(){
@@ -106,7 +83,7 @@ normalize_boolean(){
 DEPLOY_REMOTE=${DEPLOY_REMOTE:=origin}
 NAME=${NAME:=$(python -c "import setup; print(setup.NAME)")}
 VERSION=$(python -c "import setup; print(setup.VERSION)")
-MB_PYTHON_TAG=${MB_PYTHON_TAG:py3-none-any}
+MB_PYTHON_TAG=${MB_PYTHON_TAG:=py3-none-any}
 
 # The default should change depending on the application
 #DEFAULT_MODE_LIST=("sdist" "universal" "bdist")
@@ -114,14 +91,13 @@ MB_PYTHON_TAG=${MB_PYTHON_TAG:py3-none-any}
 DEFAULT_MODE_LIST=("sdist" "bdist")
 
 check_variable DEPLOY_REMOTE
-check_variable VERSION || exit 1
 
 ARG_1=$1
 
 DO_UPLOAD=${DO_UPLOAD:=$ARG_1}
 DO_TAG=${DO_TAG:=$ARG_1}
-DO_GPG=${DO_GPG:="True"}
-DO_BUILD=${DO_BUILD:="True"}
+DO_GPG=${DO_GPG:="auto"}
+DO_BUILD=${DO_BUILD:="auto"}
 
 DO_GPG=$(normalize_boolean "$DO_GPG")
 DO_BUILD=$(normalize_boolean "$DO_BUILD")
@@ -131,14 +107,12 @@ DO_TAG=$(normalize_boolean "$DO_TAG")
 TWINE_USERNAME=${TWINE_USERNAME:=""}
 TWINE_PASSWORD=${TWINE_PASSWORD:=""}
 
-
 if [[ "$(cat .git/HEAD)" != "ref: refs/heads/release" ]]; then 
     # If we are not on release, then default to the test pypi upload repo
     TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://test.pypi.org/legacy/"}
 else
     TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://upload.pypi.org/legacy/"}
 fi
-
 
 if [[ "$(which gpg2)" != "" ]]; then
     GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg2}
@@ -149,10 +123,11 @@ fi
 GPG_KEYID=${GPG_KEYID:=$(git config --local user.signingkey)}
 GPG_KEYID=${GPG_KEYID:=$(git config --global user.signingkey)}
 
+WAS_INTERACTION="False"
+
 
 echo "
 === PYPI BUILDING SCRIPT ==
-NAME='$NAME'
 VERSION='$VERSION'
 TWINE_USERNAME='$TWINE_USERNAME'
 TWINE_REPOSITORY_URL = $TWINE_REPOSITORY_URL
@@ -163,7 +138,6 @@ DO_UPLOAD=${DO_UPLOAD}
 DO_TAG=${DO_TAG}
 DO_GPG=${DO_GPG}
 DO_BUILD=${DO_BUILD}
-
 "
 
 
@@ -174,26 +148,74 @@ else
     if [[ "$DO_TAG" == "False" ]]; then
         echo "We are NOT about to tag VERSION='$VERSION'" 
     else
-        read -p "Do you want to git tag version='$VERSION'? (input 'yes' to confirm)" ANS
+        read -p "Do you want to git tag and push version='$VERSION'? (input 'yes' to confirm)" ANS
         echo "ANS = $ANS"
+        WAS_INTERACTION="True"
         DO_TAG="$ANS"
         DO_TAG=$(normalize_boolean "$DO_TAG")
+        if [ "$DO_BUILD" == "auto" ]; then
+            DO_BUILD=""
+            DO_GPG=""
+        fi
+    fi
+fi
+
+
+# Verify that we want to build
+if [ "$DO_BUILD" == "auto" ]; then
+    DO_BUILD="True"
+fi
+# Verify that we want to build
+if [ "$DO_GPG" == "auto" ]; then
+    DO_GPG="True"
+fi
+
+if [[ "$DO_BUILD" == "True" ]]; then
+    echo "About to build wheels"
+else
+    if [[ "$DO_UPLOAD" == "False" ]]; then
+        echo "We are NOT about to build wheels"
+    else
+        read -p "Do you need to build wheels? (input 'yes' to confirm)" ANS
+        echo "ANS = $ANS"
+        WAS_INTERACTION="True"
+        DO_BUILD="$ANS"
+        DO_BUILD=$(normalize_boolean "$DO_BUILD")
     fi
 fi
 
 
 # Verify that we want to publish
 if [[ "$DO_UPLOAD" == "True" ]]; then
-    echo "About to publish VERSION='$VERSION'" 
+    echo "About to directly publish VERSION='$VERSION'" 
 else
     if [[ "$DO_UPLOAD" == "False" ]]; then
-        echo "We are NOT about to publish VERSION='$VERSION'" 
+        echo "We are NOT about to directly publish VERSION='$VERSION'" 
     else
-        read -p "Are you ready to publish version='$VERSION'? (input 'yes' to confirm)" ANS
+        read -p "Are you ready to directly publish version='$VERSION'? ('yes' will twine upload)" ANS
         echo "ANS = $ANS"
+        WAS_INTERACTION="True"
         DO_UPLOAD="$ANS"
         DO_UPLOAD=$(normalize_boolean "$DO_UPLOAD")
     fi
+fi
+
+
+if [[ "$WAS_INTERACTION" == "True" ]]; then
+    echo "
+    === PYPI BUILDING SCRIPT ==
+    VERSION='$VERSION'
+    TWINE_USERNAME='$TWINE_USERNAME'
+    TWINE_REPOSITORY_URL = $TWINE_REPOSITORY_URL
+    GPG_KEYID = '$GPG_KEYID'
+    MB_PYTHON_TAG = '$MB_PYTHON_TAG'
+
+    DO_UPLOAD=${DO_UPLOAD}
+    DO_TAG=${DO_TAG}
+    DO_GPG=${DO_GPG}
+    DO_BUILD=${DO_BUILD}
+    "
+    read -p "Look good? Ready? Enter any text to continue" ANS
 fi
 
 
@@ -224,7 +246,7 @@ if [ "$DO_BUILD" == "True" ]; then
     do
         echo "_MODE = $_MODE"
         if [[ "$_MODE" == "sdist" ]]; then
-            python setup.py sdist --universal || { echo 'failed to build sdist wheel' ; exit 1; }
+            python setup.py sdist || { echo 'failed to build sdist wheel' ; exit 1; }
             WHEEL_PATH=$(ls dist/$NAME-$VERSION*.tar.gz)
             #WHEEL_PATHS+=($WHEEL_PATH)
         elif [[ "$_MODE" == "native" ]]; then
@@ -328,7 +350,9 @@ fi
 
 if [[ "$DO_TAG" == "True" ]]; then
     git tag $VERSION -m "tarball tag $VERSION"
-    git push --tags $DEPLOY_REMOTE 
+    git push --tags $DEPLOY_REMOTE
+    echo "Should also do a: git push $DEPLOY_REMOTE main:release"
+    echo "For github should draft a new release: https://github.com/PyUtils/line_profiler/releases/new"
 else
     echo "Not tagging"
 fi
