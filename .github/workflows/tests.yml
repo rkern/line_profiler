@@ -192,21 +192,24 @@ jobs:
       - name: Show files to upload
         shell: bash
         run: ls -la dist
+
+      # Note:
+      # See ../../dev/setup_secrets.sh for details on how secrets are deployed securely
       - name: Sign and Publish
-        #env:
-        #  TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
-        #  PYUTILS_TWINE_USERNAME: ${{ secrets.PYUTILS_TWINE_USERNAME }}
-        #  PYUTILS_TWINE_PASSWORD: ${{ secrets.PYUTILS_TWINE_PASSWORD }}
+        env:
+          TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+          PYUTILS_TWINE_USERNAME: ${{ secrets.PYUTILS_TWINE_USERNAME }}
+          PYUTILS_TWINE_PASSWORD: ${{ secrets.PYUTILS_TWINE_PASSWORD }}
+          PYUTILS_CI_SECRET: ${{ secrets.PYUTILS_CI_SECRET }}
         run: |
           ls -al
           GPG_EXECUTABLE=gpg
           $GPG_EXECUTABLE --version
           openssl version
           $GPG_EXECUTABLE --list-keys
-          export PYUTILS_CI_GITHUB_SECRET=${{ secrets.PYUTILS_CI_GITHUB_SECRET }}
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
@@ -216,11 +219,9 @@ jobs:
           pip install requests[security] twine --user
           GPG_KEYID=$(cat dev/public_gpg_key)
           echo "GPG_KEYID = '$GPG_KEYID'"
-          export TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
-          export PYUTILS_TWINE_USERNAME=${{ secrets.PYUTILS_TWINE_USERNAME }}
-          export PYUTILS_TWINE_PASSWORD=${{ secrets.PYUTILS_TWINE_PASSWORD }}
           MB_PYTHON_TAG=$MB_PYTHON_TAG \
               DO_GPG=True GPG_KEYID=$GPG_KEYID \
+              TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} \
               TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD \
               TWINE_USERNAME=$PYUTILS_TWINE_USERNAME \
               GPG_EXECUTABLE=$GPG_EXECUTABLE \
@@ -247,21 +248,20 @@ jobs:
         shell: bash
         run: ls -la dist
       - name: Sign and Publish
-        #env:
-        #  # Toggle comments to publish to the test pypi instead of the real one
-        #  TEST_TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-        #  PYUTILS_TEST_TWINE_USERNAME: ${{ secrets.PYUTILS_TEST_TWINE_USERNAME }}
-        #  PYUTILS_TEST_TWINE_PASSWORD: ${{ secrets.PYUTILS_TEST_TWINE_PASSWORD }}
+        env:
+          TEST_TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          PYUTILS_TEST_TWINE_USERNAME: ${{ secrets.PYUTILS_TEST_TWINE_USERNAME }}
+          PYUTILS_TEST_TWINE_PASSWORD: ${{ secrets.PYUTILS_TEST_TWINE_PASSWORD }}
+          PYUTILS_CI_SECRET: ${{ secrets.PYUTILS_CI_SECRET }}
         run: |
           ls -al
           GPG_EXECUTABLE=gpg
           $GPG_EXECUTABLE --version
           openssl version
           $GPG_EXECUTABLE --list-keys
-          export PYUTILS_CI_GITHUB_SECRET=${{ secrets.PYUTILS_CI_GITHUB_SECRET }}
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-          GLKWS=$PYUTILS_CI_GITHUB_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/cci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import-ownertrust
+          GLKWS=$PYUTILS_CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import 
           $GPG_EXECUTABLE --list-keys  || echo "first invocation of gpg creates directories and returns 1"
           $GPG_EXECUTABLE --list-keys  
           MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)")
@@ -271,14 +271,11 @@ jobs:
           pip install requests[security] twine --user
           GPG_KEYID=$(cat dev/public_gpg_key)
           echo "GPG_KEYID = '$GPG_KEYID'"
-          export TWINE_REPOSITORY_URL=https://test.pypi.org/legacy/
-          export PYUTILS_TEST_TWINE_USERNAME=${{ secrets.PYUTILS_TEST_TWINE_USERNAME }}
-          export PYUTILS_TEST_TWINE_PASSWORD=${{ secrets.PYUTILS_TEST_TWINE_PASSWORD }}
           MB_PYTHON_TAG=$MB_PYTHON_TAG \
               DO_GPG=True GPG_KEYID=$GPG_KEYID \
-              TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL} \
-              TWINE_USERNAME=$PYUTILS_TEST_TWINE_USERNAME \
-              TWINE_PASSWORD=$PYUTILS_TEST_TWINE_PASSWORD \
+              TWINE_REPOSITORY_URL=${TEST_TWINE_REPOSITORY_URL} \
+              TWINE_USERNAME=${PYUTILS_TEST_TWINE_USERNAME} \
+              TWINE_PASSWORD=${PYUTILS_TEST_TWINE_PASSWORD} \
               GPG_EXECUTABLE=$GPG_EXECUTABLE \
               DO_UPLOAD=True \
               DO_TAG=False ./publish.sh
@@ -301,6 +298,6 @@ jobs:
 #    $HOME/.local/opt/act/act \
 #        --secret=PYUTILS_TWINE_PASSWORD=$PYUTILS_TWINE_PASSWORD \
 #        --secret=PYUTILS_TWINE_USERNAME=$PYUTILS_TWINE_USERNAME \
-#        --secret=PYUTILS_CI_GITHUB_SECRET=$PYUTILS_CI_GITHUB_SECRET \
+#        --secret=PYUTILS_CI_SECRET=$PYUTILS_CI_SECRET \
 #        --secret=PYUTILS_TEST_TWINE_USERNAME=$PYUTILS_TEST_TWINE_USERNAME \
 #        --secret=PYUTILS_TEST_TWINE_PASSWORD=$PYUTILS_TEST_TWINE_PASSWORD 
