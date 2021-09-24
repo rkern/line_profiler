@@ -232,6 +232,7 @@ jobs:
               TWINE_USERNAME=$PYUTILS_TWINE_USERNAME \
               GPG_EXECUTABLE=$GPG_EXECUTABLE \
               DO_UPLOAD=True \
+              DO_BUILD=False \
               DO_TAG=False ./publish.sh 
 
   test_deploy:
@@ -290,6 +291,7 @@ jobs:
               TWINE_PASSWORD=${PYUTILS_TEST_TWINE_PASSWORD} \
               GPG_EXECUTABLE=$GPG_EXECUTABLE \
               DO_UPLOAD=True \
+              DO_BUILD=False \
               DO_TAG=False ./publish.sh
        
 ###

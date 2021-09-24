@@ -349,7 +349,12 @@ fi
 
 
 if [[ "$DO_TAG" == "True" ]]; then
-    git tag $VERSION -m "tarball tag $VERSION"
+    TAG_NAME="v${VERSION}"
+    # if we messed up we can delete the tag
+    # git push origin :refs/tags/$TAG_NAME
+    # and then tag with -f
+    # 
+    git tag $TAG_NAME -m "tarball tag $VERSION"
     git push --tags $DEPLOY_REMOTE
     echo "Should also do a: git push $DEPLOY_REMOTE main:release"
     echo "For github should draft a new release: https://github.com/PyUtils/line_profiler/releases/new"
