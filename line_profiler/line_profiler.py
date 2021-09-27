@@ -200,7 +200,8 @@ def is_ipython_kernel_cell(filename):
     """
     return (
         filename.startswith("<ipython-input-") or
-        filename.startswith(tempfile.gettempdir() + '/ipykernel_')
+        filename.startswith(tempfile.gettempdir() + '/ipykernel_') or
+        filename.startswith(tempfile.gettempdir() + '/xpython_')
     )
 
 
