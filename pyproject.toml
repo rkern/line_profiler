@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=41.0.1", "wheel",  "Cython", "scikit-build>=0.9.0", "cmake", "ninja"]
+# build-backend = "setuptools.build_meta"  commented out to disable pep517
+### build-backend = "scikit-build"
+
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines =[
+    "pragma: no cover",
+    ".*  # pragma: no cover",
+    ".*  # nocover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if trace is not None",
+    "verbose = .*",
+    "^ *raise",
+    "^ *pass *$",
+    "if _debug:",
+    "if __name__ == .__main__.:",
+    ".*if six.PY2:"
+]
+
+omit =[
+    "*/setup.py"
+]

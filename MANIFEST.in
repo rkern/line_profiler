@@ -1,8 +1,14 @@
-include LICENSE.txt
-include LICENSE_Python.txt
-include README.rst
-include python25.pxd
-include timers.h
-include _line_profiler.c
-include unset_trace.h
+include *.md
+include *.rst
+include *.py
+include *.txt
+include *.toml
+include run_tests.sh
+recursive-include requirements *.txt
 recursive-include tests *.py
+recursive-include line_profiler *.txt
+recursive-include line_profiler *.pyx
+recursive-include line_profiler *.pxd
+recursive-include line_profiler *.pyd
+recursive-include line_profiler *.c
+recursive-include line_profiler *.h

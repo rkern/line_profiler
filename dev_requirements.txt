@@ -1,2 +1,0 @@
-Cython
-IPython>=0.13

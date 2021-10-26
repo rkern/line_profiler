@@ -1,0 +1,161 @@
+# Python CircleCI 2.0 configuration file
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+# References:
+#     # how to setup multiple python versions
+#     https://stackoverflow.com/questions/948354/default-behavior-of-git-push-without-a-branch-specified
+#     https://github.com/adambrenecki/virtualfish/blob/aa3d6271bcb86ad27b6d24f96b5bd386d176f588/.circleci/config.yml
+#
+#     # Multiple files for a checksum
+#     https://discuss.circleci.com/t/cant-checksum-multiple-files-with-slashes-in-the-file-path/20667/2
+#     
+#     # Auto Cancel Redundant Builds
+#     https://circleci.com/docs/2.0/skip-build/#steps-to-enable-auto-cancel-for-pipelines-triggered-by-pushes-to-github-or-the-api
+#     https://app.circleci.com/settings/project/github/pyutils/line_profiler/advanced?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2Fpyutils%2FPYPKG
+
+version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test_full/cp39-cp39-manylinux2010
+      - test_full/cp38-cp38-manylinux2010
+      - test_full/cp37-cp37m-manylinux2010
+      - test_full/cp36-cp36m-manylinux2010
+      - test_full/cp35-cp35m-manylinux1
+
+
+jobs:
+
+  ###########
+  # TEMPLATES
+  ###########
+
+  .common_template: &common_template
+    environment:
+      # Setting the python executable environ allows template reuse for pypy
+      - PYTHON_EXE: python
+    docker:
+      - image: circleci/python
+    steps:
+      - checkout
+
+
+  .test_full_template: &test_full_template  
+    <<: 
+        - *common_template
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: prepare_env
+          command: |
+            $PYTHON_EXE -m venv venv
+            # $PYTHON_EXE -m pip install --upgrade pip
+            . venv/bin/activate
+            # pip install --upgrade pip
+      - run:
+          name: build_wheel
+          command: |
+            . venv/bin/activate
+            MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
+            VERSION=$(python -c "import setup; print(setup.VERSION)") 
+            _INSIDE_DOCKER=YES REPO_ROOT="." MB_PYTHON_TAG=$MB_PYTHON_TAG ./run_manylinux_build.sh
+      - persist_to_workspace:
+          root: .
+          paths:
+              - dist
+      - run:
+          name: install_wheel
+          command: |
+            . venv/bin/activate
+            # pip install --upgrade pip
+            MB_PYTHON_TAG=$(python -c "import setup; print(setup.MB_PYTHON_TAG)") 
+            VERSION=$(python -c "import setup; print(setup.VERSION)") 
+            BDIST_WHEEL_PATH=$(ls dist/*-$VERSION-$MB_PYTHON_TAG*.whl)
+            pip install ${BDIST_WHEEL_PATH}[all]
+      - run:
+          name: run_tests
+          command: |
+            . venv/bin/activate
+            python run_tests.py
+
+
+  ###################################
+  ### INHERIT FROM BASE TEMPLATES ###
+  ###################################
+
+  # Define tests fo the other python verisons using the "test3.6" template
+  # and indicating what needs to be modified.
+  #
+  # All we need to do is change the base docker image so python is the
+  # version we want we can reuse everything else from the template
+  
+  test_full/cp39-cp39-manylinux2010:
+    <<: *test_full_template
+    environment:
+      - PYTHON_EXE: /opt/python/cp39-cp39/bin/python
+      - MB_PYTHON_TAG=cp39-cp39
+    docker:
+      - image: quay.io/pypa/manylinux2010_x86_64:latest
+    working_directory: ~/repo-full-cp39
+  
+  test_full/cp38-cp38-manylinux2010:
+    <<: *test_full_template
+    environment:
+      - PYTHON_EXE: /opt/python/cp38-cp38/bin/python
+      - MB_PYTHON_TAG=cp38-cp38
+    docker:
+      - image: quay.io/pypa/manylinux2010_x86_64:latest
+    working_directory: ~/repo-full-cp38
+  
+  test_full/cp37-cp37m-manylinux2010:
+    <<: *test_full_template
+    environment:
+      - PYTHON_EXE: /opt/python/cp37-cp37m/bin/python
+      - MB_PYTHON_TAG=cp37-cp37m
+    docker:
+      - image: quay.io/pypa/manylinux2010_x86_64:latest
+    working_directory: ~/repo-full-cp37
+
+  test_full/cp36-cp36m-manylinux2010:
+    <<: *test_full_template
+    environment:
+      - PYTHON_EXE: /opt/python/cp36-cp36m/bin/python
+      - MB_PYTHON_TAG=cp36-cp36m
+    docker:
+      - image: quay.io/pypa/manylinux2010_x86_64:latest
+    working_directory: ~/repo-full-cp36
+
+  test_full/cp35-cp35m-manylinux1:
+    <<: *test_full_template
+    environment:
+      - PYTHON_EXE: /opt/python/cp35-cp35m/bin/python
+      - MB_PYTHON_TAG=cp35-cp35m
+    docker:
+      - image: quay.io/pypa/manylinux1_x86_64:latest
+    working_directory: ~/repo-full-cp35
+ 
+
+__scratch_work__:
+    docker:
+      - image: pypy:3
+    working_directory: ~/dev-only-not-a-real-job
+    steps:
+      - | 
+        __doc__=" 
+        # Run circleci scripts on a local machine
+        # snap install circleci
+        mkdir -p $HOME/Downloads
+        curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/Downloads bash
+
+        circleci update
+        circleci switch
+
+        circleci config validate
+        circleci local execute --job test_full/cp39-cp39-manylinux2010
+        circleci local execute --config .circleci/config.yml --job test_full/cp38-cp38-manylinux2010
+        circleci local execute --config .circleci/config.yml 
+
+        circleci local execute --job test_full/cp38-cp38-manylinux2010
+        "

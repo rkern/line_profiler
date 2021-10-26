@@ -4,9 +4,13 @@
 """
 
 import functools
-import optparse
 import os
 import sys
+from argparse import ArgumentError, ArgumentParser
+
+# NOTE: This version needs to be manually maintained with the line_profiler
+# __version__ for now.
+__version__ = '3.3.1'
 
 PY3 = sys.version_info[0] == 3
 
@@ -94,6 +98,8 @@ class ContextualProfile(Profile):
             self.enable_by_count()
             try:
                 item = next(g)
+            except StopIteration:
+                return
             finally:
                 self.disable_by_count()
             input = (yield item)
@@ -102,6 +108,8 @@ class ContextualProfile(Profile):
                 self.enable_by_count()
                 try:
                     item = g.send(input)
+                except StopIteration:
+                    return
                 finally:
                     self.disable_by_count()
                 input = (yield item)
@@ -147,41 +155,45 @@ def find_script(script_name):
 
 
 def main(args=None):
-    if args is None:
-        args = sys.argv
-    usage = "%prog [-s setupfile] [-o output_file_path] scriptfile [arg] ..."
-    parser = optparse.OptionParser(usage=usage, version="%prog 1.0b2")
-    parser.allow_interspersed_args = False
-    parser.add_option('-l', '--line-by-line', action='store_true',
-        help="Use the line-by-line profiler from the line_profiler module "
-        "instead of Profile. Implies --builtin.")
-    parser.add_option('-b', '--builtin', action='store_true',
-        help="Put 'profile' in the builtins. Use 'profile.enable()' and "
-            "'profile.disable()' in your code to turn it on and off, or "
-            "'@profile' to decorate a single function, or 'with profile:' "
-            "to profile a single section of code.")
-    parser.add_option('-o', '--outfile', default=None,
-        help="Save stats to <outfile>")
-    parser.add_option('-s', '--setup', default=None,
+    def positive_float(value):
+        val = float(value)
+        if val <= 0:
+            raise ArgumentError
+        return val
+
+    parser = ArgumentParser(description="Run and profile a python script.")
+    parser.add_argument('-V', '--version', action='version', version=__version__)
+    parser.add_argument('-l', '--line-by-line', action='store_true',
+        help="Use the line-by-line profiler instead of cProfile. Implies --builtin.")
+    parser.add_argument('-b', '--builtin', action='store_true',
+        help="Put 'profile' in the builtins. Use 'profile.enable()'/'.disable()', "
+            "'@profile' to decorate functions, or 'with profile:' to profile a "
+            "section of code.")
+    parser.add_argument('-o', '--outfile',
+        help="Save stats to <outfile> (default: 'scriptname.lprof' with "
+            "--line-by-line, 'scriptname.prof' without)")
+    parser.add_argument('-s', '--setup',
         help="Code to execute before the code to profile")
-    parser.add_option('-v', '--view', action='store_true',
-        help="View the results of the profile in addition to saving it.")
+    parser.add_argument('-v', '--view', action='store_true',
+        help="View the results of the profile in addition to saving it")
+    parser.add_argument('-u', '--unit', default='1e-6', type=positive_float,
 
-    if not sys.argv[1:]:
-        parser.print_usage()
-        sys.exit(2)
+        help="Output unit (in seconds) in which the timing info is "
+        "displayed (default: 1e-6)")
+    parser.add_argument('-z', '--skip-zero', action='store_true',
+        help="Hide functions which have not been called")
 
-    options, args = parser.parse_args()
+    parser.add_argument('script', help="The python script file to run")
+    parser.add_argument('args', nargs='...', help="Optional script arguments")
+
+    options = parser.parse_args(args)
 
     if not options.outfile:
-        if options.line_by_line:
-            extension = 'lprof'
-        else:
-            extension = 'prof'
-        options.outfile = '%s.%s' % (os.path.basename(args[0]), extension)
+        extension = 'lprof' if options.line_by_line else 'prof'
+        options.outfile = '%s.%s' % (os.path.basename(options.script), extension)
 
 
-    sys.argv[:] = args
+    sys.argv = [options.script] + options.args
     if options.setup is not None:
         # Run some setup code outside of the profiler. This is good for large
         # imports.
@@ -207,7 +219,7 @@ def main(args=None):
             import __builtin__ as builtins
         builtins.__dict__['profile'] = prof
 
-    script_file = find_script(sys.argv[0])
+    script_file = find_script(options.script)
     __file__ = script_file
     __name__ = '__main__'
     # Make sure the script's directory is on sys.path instead of just
@@ -228,7 +240,12 @@ def main(args=None):
         prof.dump_stats(options.outfile)
         print('Wrote profile results to %s' % options.outfile)
         if options.view:
-            prof.print_stats()
+            if isinstance(prof, ContextualProfile):
+                prof.print_stats()
+            else:
+                prof.print_stats(output_unit=options.unit,
+                                 stripzeros=options.skip_zero)
+
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    main(sys.argv[1:])

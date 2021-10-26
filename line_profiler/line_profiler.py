@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -13,16 +14,25 @@ except ImportError:
 import functools
 import inspect
 import linecache
-import optparse
+import tempfile
 import os
 import sys
+from argparse import ArgumentError, ArgumentParser
 
 from IPython.core.magic import (Magics, magics_class, line_magic)
 from IPython.core.page import page
 from IPython.utils.ipstruct import Struct
 from IPython.core.error import UsageError
 
-from _line_profiler import LineProfiler as CLineProfiler
+try:
+    from ._line_profiler import LineProfiler as CLineProfiler
+except ImportError as ex:
+    raise ImportError(
+        'The line_profiler._line_profiler c-extension is not importable. '
+        'Has it been compiled? Underlying error is ex={!r}'.format(ex)
+    )
+
+__version__ = '3.3.1'
 
 # Python 2/3 compatibility utils
 # ===========================================================
@@ -56,6 +66,14 @@ else:
         return False
 
 # ============================================================
+
+def format_time(t):
+    if t >= 1000000:
+        return u"%.1f s " % (t / 1000000.0)
+    elif t >= 1000:
+        return u"%.1f ms" % (t / 1000.0)
+    else:
+        return u"%.1f µs" % t
 
 CO_GENERATOR = 0x0020
 def is_generator(f):
@@ -92,6 +110,8 @@ class LineProfiler(CLineProfiler):
             self.enable_by_count()
             try:
                 item = next(g)
+            except StopIteration:
+                return
             finally:
                 self.disable_by_count()
             input = (yield item)
@@ -100,6 +120,8 @@ class LineProfiler(CLineProfiler):
                 self.enable_by_count()
                 try:
                     item = g.send(input)
+                except StopIteration:
+                    return
                 finally:
                     self.disable_by_count()
                 input = (yield item)
@@ -119,7 +141,7 @@ class LineProfiler(CLineProfiler):
         return wrapper
 
     if PY35:
-        import line_profiler_py35
+        from . import line_profiler_py35
         wrap_coroutine = line_profiler_py35.wrap_coroutine
 
     def dump_stats(self, filename):
@@ -181,6 +203,16 @@ class LineProfiler(CLineProfiler):
         return nfuncsadded
 
 
+def is_ipython_kernel_cell(filename):
+    """ Return True if a filename corresponds to a Jupyter Notebook cell
+    """
+    return (
+        filename.startswith("<ipython-input-") or
+        filename.startswith(tempfile.gettempdir() + '/ipykernel_') or
+        filename.startswith(tempfile.gettempdir() + '/xpython_')
+    )
+
+
 def show_func(filename, start_lineno, func_name, timings, unit,
     output_unit=None, stream=None, stripzeros=False):
     """ Show results for a single function.
@@ -188,7 +220,7 @@ def show_func(filename, start_lineno, func_name, timings, unit,
     if stream is None:
         stream = sys.stdout
 
-    template = '%6s %9s %12s %8s %8s  %-s'
+    template = '%6s %9s %14s %10s %8s  %-s'
     d = {}
     total_time = 0.0
     linenos = []
@@ -204,7 +236,7 @@ def show_func(filename, start_lineno, func_name, timings, unit,
     scalar = unit / output_unit
 
     stream.write("Total time: %g s\n" % (total_time * unit))
-    if os.path.exists(filename) or filename.startswith("<ipython-input-"):
+    if os.path.exists(filename) or is_ipython_kernel_cell(filename):
         stream.write("File: %s\n" % filename)
         stream.write("Function: %s at line %s\n" % (func_name, start_lineno))
         if os.path.exists(filename):
@@ -222,10 +254,17 @@ def show_func(filename, start_lineno, func_name, timings, unit,
         nlines = max(linenos) - min(min(linenos), start_lineno) + 1
         sublines = [''] * nlines
     for lineno, nhits, time in timings:
-        d[lineno] = (nhits,
-            '%5.1f' % (time * scalar),
-            '%5.1f' % (float(time) * scalar / nhits),
-            '%5.1f' % (100 * time / total_time) )
+        if scalar != 1:
+            d[lineno] = (nhits,
+                '%6.1f' % (time * scalar),
+                '%6.1f' % (float(time) * scalar / nhits),
+                '%5.1f' % (100 * time / total_time) )
+        else:
+            time_str = format_time(time)
+            per_hit_str = format_time(time / nhits)
+            d[lineno] = (nhits, '%6s' % time_str,
+                                '%6s' % per_hit_str,
+                                '%5.1f' % (100 * time / total_time) )
     linenos = range(start_lineno, start_lineno + len(sublines))
     empty = ('', '', '', '')
     header = template % ('Line #', 'Hits', 'Time', 'Per Hit', '% Time',
@@ -409,14 +448,33 @@ def load_stats(filename):
 
 
 def main():
-    usage = "usage: %prog profile.lprof"
-    parser = optparse.OptionParser(usage=usage, version='%prog 1.0b2')
+    def positive_float(value):
+        val = float(value)
+        if val <= 0:
+            raise ArgumentError
+        return val
 
-    options, args = parser.parse_args()
-    if len(args) != 1:
-        parser.error("Must provide a filename.")
-    lstats = load_stats(args[0])
-    show_text(lstats.timings, lstats.unit)
+    parser = ArgumentParser()
+    parser.add_argument('-V', '--version', action='version', version=__version__)
+    parser.add_argument(
+        '-u',
+        '--unit',
+        default='1e-6',
+        type=positive_float,
+        help="Output unit (in seconds) in which the timing info is displayed (default: 1e-6)",
+    )
+    parser.add_argument(
+        '-z',
+        '--skip-zero',
+        action='store_true',
+        help="Hide functions which have not been called",
+    )
+    parser.add_argument('profile_output', help="*.lprof file created by kernprof")
+
+    args = parser.parse_args()
+    lstats = load_stats(args.profile_output)
+    show_text(lstats.timings, lstats.unit, output_unit=args.unit, stripzeros=args.skip_zero)
+
 
 if __name__ == '__main__':
     main()

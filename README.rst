@@ -1,27 +1,33 @@
 line_profiler and kernprof
 --------------------------
 
+|Pypi| |Downloads| |CircleCI| |ActionsTest| |Codecov|
+
+
+NOTICE: This is the official `line_profiler` repository. The most recent
+version of `line-profiler <https://pypi.org/project/line_profiler/>`_ on pypi
+points to this repo. The the original 
+`line_profiler <https://github.com/rkern/line_profiler/>`_ package by  
+`@rkern <https://github.com/rkern/>`_ is currently unmaintained. This fork
+seeks to simply maintain the original code so it continues to work in new
+versions of Python.
+
+----
+
+
 `line_profiler` is a module for doing line-by-line profiling of functions.
 kernprof is a convenient script for running either `line_profiler` or the Python
 standard library's cProfile or profile modules, depending on what is available.
 
 They are available under a `BSD license`_.
 
-.. _BSD license: https://raw.githubusercontent.com/rkern/line_profiler/master/LICENSE.txt
+.. _BSD license: https://raw.githubusercontent.com/pyutils/line_profiler/master/LICENSE.txt
 
 .. contents::
 
 
 Installation
 ============
-
-**Note:** As of version 2.1.2, `pip install line_profiler` does not work.
-Please install as follows until it is fixed in the next release::
-    
-    git clone https://github.com/rkern/line_profiler.git
-    find line_profiler -name '*.pyx' -exec cython {} \;
-    cd line_profiler
-    pip install . --user 
 
 Releases of `line_profiler` can be installed using pip::
 
@@ -33,7 +39,7 @@ Source releases and any binaries can be downloaded from the PyPI link.
 
 To check out the development sources, you can use Git_::
 
-    $ git clone https://github.com/rkern/line_profiler.git
+    $ git clone https://github.com/pyutils/line_profiler.git
 
 You may also download source tarballs of any snapshot from that URL.
 
@@ -46,6 +52,13 @@ required in that case.
 a compiler.  If you wish to use it to run cProfile and not line-by-line
 profiling, you may copy it to a directory on your `PATH` manually and avoid
 trying to build any C extensions.
+
+As of 2021-06-04 Linux (x86_64 and i686), OSX (10_9_x86_64), and Win32 (win32,
+and amd64) binaries are available on pypi.
+
+Alternateively on windows you might consider using Christoph Gohlke's
+unofficial line-profiler 
+`precompiled win32 wheels <https://www.lfd.uci.edu/~gohlke/pythonlibs/#line_profiler>`_.
 
 .. _git: http://git-scm.com/
 .. _Cython: http://www.cython.org
@@ -235,13 +248,12 @@ command::
 
     $ python -m pstats script_to_profile.py.prof
 
-Such files may also be viewed with graphical tools like kcachegrind_ through the
-converter program pyprof2calltree_ or RunSnakeRun_.
+Such files may also be viewed with graphical tools like SnakeViz_ and converted
+through pyprof2calltree_ to run on kcachegrind_ and compatible apps.
 
 .. _kcachegrind: http://kcachegrind.sourceforge.net/html/Home.html
 .. _pyprof2calltree: http://pypi.python.org/pypi/pyprof2calltree/
-.. _RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
-
+.. _SnakeViz: https://github.com/jiffyclub/snakeviz/
 
 Frequently Asked Questions
 ==========================
@@ -334,10 +346,14 @@ Frequently Asked Questions
     C sources. You will probably need version 0.10 or higher. There is a bug in
     some earlier versions in how it handles NULL PyObject* pointers.
 
+    As of version ``3.0.0`` manylinux wheels containing the binaries are
+    available on pypi. Work is still needed to publish osx and win32 wheels.
+    (PRs for this would be helpful!)
+
 * What version of Python do I need?
 
-    Both `line_profiler` and `kernprof` have been tested with Python 2.7, and
-    3.2-3.4.
+    Both `line_profiler` and `kernprof` have been tested with Python 3.5-3.9.
+    Older versions of `line_profiler` support older versions of Python.
 
 
 To Do
@@ -357,56 +373,28 @@ Bugs and Such
 
 Bugs and pull requested can be submitted on GitHub_.
 
-.. _GitHub: https://github.com/rkern/line_profiler
+.. _GitHub: https://github.com/pyutils/line_profiler
 
 
 Changes
 =======
 
-2.1
-~~~
-* ENH: Add support for Python 3.5 coroutines
-* ENH: Documentation updates
-* ENH: CI for most recent Python versions (3.5, 3.6, 3.6-dev, 3.7-dev, nightly)
-* ENH: Add timer unit argument for output time granularity spec
+See `CHANGELOG`_.
 
-2.0
-~~~
-* BUG: Added support for IPython 5.0+, removed support for IPython <=0.12
+.. _CHANGELOG: CHANGELOG.rst
 
-1.1
-~~~
-* BUG: Read source files as bytes.
 
-1.0
-~~~
-* ENH: `kernprof.py` is now installed as `kernprof`.
-* ENH: Python 3 support. Thanks to the long-suffering Mikhail Korobov for being
-  patient.
-* Dropped 2.6 as it was too annoying.
-* ENH: The `stripzeros` and `add_module` options. Thanks to Erik Tollerud for
-  contributing it.
-* ENH: Support for IPython cell blocks. Thanks to Michael Forbes for adding
-  this feature.
-* ENH: Better warnings when building without Cython. Thanks to David Cournapeau
-  for spotting this.
-
-1.0b3
-~~~~~
-
-* ENH: Profile generators.
-* BUG: Update for compatibility with newer versions of Cython. Thanks to Ondrej
-  Certik for spotting the bug.
-* BUG: Update IPython compatibility for 0.11+. Thanks to Yaroslav Halchenko and
-  others for providing the updated imports.
-
-1.0b2
-~~~~~
-
-* BUG: fixed line timing overflow on Windows.
-* DOC: improved the README.
-
-1.0b1
-~~~~~
-
-* Initial release.
+.. |CircleCI| image:: https://circleci.com/gh/pyutils/line_profiler.svg?style=svg
+    :target: https://circleci.com/gh/pyutils/line_profiler
+.. |Travis| image:: https://img.shields.io/travis/pyutils/line_profiler/master.svg?label=Travis%20CI
+   :target: https://travis-ci.org/pyutils/line_profiler?branch=master
+.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/github/pyutils/line_profiler?branch=master&svg=True
+   :target: https://ci.appveyor.com/project/pyutils/line_profiler/branch/master
+.. |Codecov| image:: https://codecov.io/github/pyutils/line_profiler/badge.svg?branch=master&service=github
+   :target: https://codecov.io/github/pyutils/line_profiler?branch=master
+.. |Pypi| image:: https://img.shields.io/pypi/v/line_profiler.svg
+   :target: https://pypi.python.org/pypi/line_profiler
+.. |Downloads| image:: https://img.shields.io/pypi/dm/line_profiler.svg
+   :target: https://pypistats.org/packages/line_profiler
+.. |ActionsTest| image:: https://github.com/pyutils/line_profiler/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/pyutils/line_profiler/actions/workflows/tests.yml
